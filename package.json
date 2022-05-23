@@ -1,4 +1,5 @@
 {
+    "type": "module",
     "scripts": {
         "prestart": "npx tailwindcss -i ./index.css -o ./dist/index.css",
         "start": "node index.js"

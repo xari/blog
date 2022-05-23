@@ -1,9 +1,12 @@
-const fs = require("fs");
-const path = require("path");
-const sharp = require("sharp");
-const { DateTime } = require("luxon");
-const jsdom = require("jsdom");
-const YAML = require("yaml");
+import fs from "fs";
+import { fileURLToPath } from "url";
+import path, { dirname } from "path";
+import sharp from "sharp";
+import { DateTime } from "luxon";
+import { JSDOM } from "jsdom";
+import YAML from "yaml";
+import MarkdownIt from "markdown-it";
+import front_matter_plugin from "markdown-it-front-matter";
 
 function postTemplate({ title, content, date }) {
   return `
@@ -18,8 +21,6 @@ function postTemplate({ title, content, date }) {
       </article>
     `;
 }
-
-const { JSDOM } = jsdom;
 
 async function handleImg(file, destination) {
   try {
@@ -44,12 +45,12 @@ function handleMarkdown(filename, origin, destination) {
 
     let title, description, date; // frontmatter
 
-    const parseMarkdown = require("markdown-it")({
+    const parseMarkdown = MarkdownIt({
         html: true,
         linkify: true,
         typographer: true,
       }).use(
-        require("markdown-it-front-matter"),
+        front_matter_plugin,
         (frontmatter) =>
           ({ title, description, date } = YAML.parse(frontmatter))
       ),
@@ -82,9 +83,10 @@ function handleMarkdown(filename, origin, destination) {
   });
 }
 
-const dir = "cloud-pricing"; // ./content/cloud-pricing
-const origin = path.join(__dirname, "content", dir);
-const destination = path.join(__dirname, "dist", dir);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const origin = path.join(__dirname, "content", "cloud-pricing");
+const destination = path.join(__dirname, "dist", "cloud-pricing");
 
 // Test read all files in dir
 fs.readdir(origin, { withFileTypes: true }, (err, files) => {
