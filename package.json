@@ -1,0 +1,17 @@
+{
+    "scripts": {
+        "prestart": "npx tailwindcss -i ./index.css -o ./dist/index.css",
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "jsdom": "^19.0.0",
+        "luxon": "^2.4.0",
+        "markdown-it": "^13.0.1",
+        "markdown-it-front-matter": "^0.2.3",
+        "sharp": "^0.30.4",
+        "yaml": "^2.1.0"
+    },
+    "devDependencies": {
+        "tailwindcss": "^3.0.24"
+    }
+}

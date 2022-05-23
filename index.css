@@ -1,0 +1,112 @@
+@font-face {
+  font-family: "Rosario";
+  font-style: normal;
+  src: url(./fonts/rosario/Rosario-VariableFont_wght.ttf)
+    format("truetype-variations");
+}
+
+@font-face {
+  font-family: "Rosario";
+  font-style: italic;
+  src: url(./fonts/rosario/Rosario-Italic-VariableFont_wght.ttf)
+    format("truetype-variations");
+}
+
+@font-face {
+  font-family: "Crimson Pro";
+  font-style: normal;
+  src: url(./fonts/crimson_pro/CrimsonPro-VariableFont_wght.ttf)
+    format("truetype-variations");
+}
+
+@font-face {
+  font-family: "Crimson Pro";
+  font-style: italic;
+  src: url(./fonts/crimson_pro/CrimsonPro-Italic-VariableFont_wght.ttf)
+    format("truetype-variations");
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  @apply font-display;
+  @apply font-black;
+}
+
+h2,
+h3,
+h4,
+h5 {
+  @apply mt-10;
+}
+
+body {
+  @apply font-body;
+  @apply text-2xl;
+  @apply leading-8;
+  color: hsla(0, 0%, 0%, 0.73);
+}
+
+a {
+  color: #ff5700;
+}
+
+p {
+  @apply my-6;
+}
+
+blockquote {
+  @apply my-6;
+  @apply pl-5;
+  @apply text-2xl;
+  @apply italic;
+  @apply border-l-4;
+  border-color: #ff5700;
+  border-style: solid;
+  color: hsla(0, 0%, 0%, 0.59);
+}
+
+small {
+  @apply font-extralight;
+  @apply my-2;
+}
+
+.content {
+  @apply my-5;
+  @apply pb-5;
+}
+
+.content p {
+  @apply max-w-3xl;
+}
+
+h1 a {
+  color: hsla(0, 0%, 0%, 0.73);
+}
+
+.call-out-indigo {
+  @apply -mx-5;
+  @apply pt-2;
+  @apply pr-0;
+  @apply pb-4;
+  @apply pl-5;
+  border-image-source: url(./bg-paper-indigo.svg);
+}
+
+.call-out-indigo :not(pre) > code[class*="language-"],
+.call-out-indigo pre[class*="language-"] {
+  background: none;
+  border: none;
+  width: calc(100% + 20px);
+  @apply max-w-none;
+}
+
+.call-out-indigo code[class*="language-"] {
+  @apply pr-0;
+}
