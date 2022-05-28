@@ -1,4 +1,4 @@
-import fs from "fs";
+import { mkdirSync, promises as fs } from "fs";
 import { fileURLToPath } from "url";
 import path, { dirname } from "path";
 import sharp from "sharp";
@@ -8,8 +8,13 @@ import YAML from "yaml";
 import MarkdownIt from "markdown-it";
 import front_matter_plugin from "markdown-it-front-matter";
 
-function postTemplate({ title, content, date }) {
-  return `
+function templateFromData({ title, content, date }) {
+  return new Promise((resolve, reject) => {
+    // Should have all arguments...
+    typeof title !== "undefined" &&
+    typeof content !== "undefined" &&
+    typeof date !== "undefined"
+      ? resolve(`
       <article>
         <header class="my-3">
           <h1 class="text-5xl">${title}</h1>
@@ -19,77 +24,72 @@ function postTemplate({ title, content, date }) {
           ${content}
         </section>
       </article>
-    `;
+    `)
+      : reject("Missing at least one of the data");
+  });
 }
 
-async function handleImg(file, destination) {
-  try {
-    await sharp(file)
-      .resize({
-        width: 600,
-        fit: "inside",
-      })
-      .toFile(destination);
-  } catch (error) {
-    console.log(`An error occurred during processing: ${error}`);
-  }
-}
-
-function handleMarkdown(filename, origin, destination) {
-  fs.readFile(path.join(origin, filename), "utf8", (err, data) => {
-    if (err) {
-      console.error(err);
-
-      return;
-    }
-
+// TODO: Should reject immediately if no md/if md not a string?
+function parseMD(md) {
+  return new Promise((resolve) => {
     let title, description, date; // frontmatter
 
-    const parseMarkdown = MarkdownIt({
-        html: true,
-        linkify: true,
-        typographer: true,
-      }).use(
+    const content = MarkdownIt({
+      html: true,
+      linkify: true,
+      typographer: true,
+    })
+      .use(
         front_matter_plugin,
         (frontmatter) =>
           ({ title, description, date } = YAML.parse(frontmatter))
-      ),
-      content = parseMarkdown.render(data);
+      )
+      .render(md);
 
-    // Creates the directory if it doesn't exist yet.
-    if (!fs.existsSync(destination)) {
-      fs.mkdirSync(destination, { recursive: true });
-    }
-
-    const stream = fs.createWriteStream(path.join(destination, "index.html"));
-
-    stream.once("open", async (fd) => {
-      const dom = await JSDOM.fromFile(path.join(__dirname, "index.html")); // Fix this later to not use a global var/__dirname
-
-      dom.window.document.getElementById("content").innerHTML = postTemplate({
-        title,
-        date: DateTime.fromISO(date).toLocaleString({
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        }),
-        content,
-      });
-
-      stream.write(dom.serialize());
-
-      stream.end();
+    resolve({
+      title,
+      description,
+      date: DateTime.fromISO(date).toLocaleString({
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      }),
+      content,
     });
+  });
+}
+
+function handleImg(origin, destination) {
+  sharp(origin)
+    .resize({
+      width: 600,
+      fit: "inside",
+    })
+    .toFile(destination);
+}
+
+function handleMD(origin) {
+  return fs.readFile(origin, "utf8").then(parseMD).then(templateFromData);
+}
+
+function hydrateDOM(postHTML) {
+  return JSDOM.fromFile(path.join(__dirname, "index.html")).then((dom) => {
+    dom.window.document.getElementById("content").innerHTML = postHTML;
+
+    return dom.serialize();
   });
 }
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const origin = path.join(__dirname, "content", "cloud-pricing");
-const destination = path.join(__dirname, "dist", "cloud-pricing");
+const postSlug = "cloud-pricing";
+const origin = path.join(__dirname, "src", postSlug);
+const destination = path.join(__dirname, "dist", postSlug);
 
 // Test read all files in dir
-fs.readdir(origin, { withFileTypes: true }, (err, files) => {
+fs.readdir(origin, { withFileTypes: true }).then((files) => {
+  mkdirSync(destination, { recursive: true });
+
   files.forEach((file) => {
     switch (path.extname(file.name)) {
       case ".png":
@@ -102,7 +102,11 @@ fs.readdir(origin, { withFileTypes: true }, (err, files) => {
         );
         break;
       case ".md":
-        handleMarkdown(file.name, origin, destination);
+        handleMD(path.join(origin, file.name))
+          .then(hydrateDOM)
+          .then((html) =>
+            fs.writeFile(path.join(destination, "index.html"), html)
+          );
         break;
       default:
         console.info(`Unmatched file extension: ${file.name}.`);
