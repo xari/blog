@@ -1,5 +1,5 @@
 ---
-title: Thoughts on Digital Ocean's realtive pricing transparency
+title: Thoughts on Digital Ocean's relative pricing transparency
 date: 2022-05-20
 description: A side-by-side exploration of Digital Ocean's pricing vs. AWS & GCP.
 ---

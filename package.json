@@ -1,10 +1,11 @@
 {
     "type": "module",
     "scripts": {
-        "prestart": "npx tailwindcss -i ./index.css -o ./dist/index.css",
-        "start": "node index.js"
+        "prestart": "npx tailwindcss -c ./tailwind.config.cjs -i ./index.css -o ./dist/index.css",
+        "start": "node ./index.js"
     },
     "dependencies": {
+        "express": "^4.18.1",
         "jsdom": "^19.0.0",
         "luxon": "^2.4.0",
         "markdown-it": "^13.0.1",
