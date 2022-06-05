@@ -8,8 +8,45 @@ import { JSDOM } from "jsdom";
 import YAML from "yaml";
 import MarkdownIt from "markdown-it";
 import front_matter_plugin from "markdown-it-front-matter";
+import prism_plugin from "markdown-it-prism";
+import webpack from "webpack";
 
-function indexTemplate({ title, description, date, url }) {
+// This config object is used to compile the JS that may be included in individual blog posts
+const getWebpackConfig = (file, origin, destination) => ({
+  mode: "development",
+  entry: path.join(origin, file.name),
+  resolve: {
+    extensions: [".js"],
+  },
+  output: {
+    filename: file.name,
+    path: destination,
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        use: [
+          {
+            loader: "babel-loader",
+            options: {
+              presets: [
+                "@babel/preset-env",
+                ["@babel/preset-react", { runtime: "automatic" }],
+              ],
+            },
+          },
+        ],
+      },
+      {
+        test: /\.css$/i,
+        use: ["style-loader", "css-loader"],
+      },
+    ],
+  },
+});
+
+function indexTemplate({ title, description, dateString: date, url }) {
   return `
   <article class="max-w-xl mb-10">
       <header>
@@ -24,7 +61,7 @@ function indexTemplate({ title, description, date, url }) {
   </article>`;
 }
 
-function postTemplate({ title, description, date, content }) {
+function postTemplate({ title, description, dateString: date, content }) {
   return `
   <article>
     <header class="my-3">
@@ -76,17 +113,15 @@ function parseMD(md, callback = (x) => x) {
         (frontmatter) =>
           ({ title, description, date } = YAML.parse(frontmatter))
       )
+      .use(prism_plugin)
       .render(md);
 
     resolve(
       callback({
         title,
         description,
-        date: DateTime.fromISO(date).toLocaleString({
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        }),
+        date: new Date(date),
+        dateString: DateTime.fromISO(date).toLocaleString(DateTime.DATE_FULL),
         content,
       })
     );
@@ -110,7 +145,6 @@ function hydrateDOM(path, html) {
   });
 }
 
-// This bit is slightly crazy...
 // build() will return an array of Promises that are the result of recursively calling build.
 // These promises resolve to the post metadata (title, description, date) that will be used to build the index page.
 // The reason for all of this is that it lets me recursively build ./dist files for every directory in ./src....
@@ -139,6 +173,22 @@ async function build(acc, origin, destination) {
             );
             return acc;
             break;
+          case ".js":
+            const compiler = webpack(
+              getWebpackConfig(file, origin, destination)
+            );
+
+            console.info(`Compiling JS bundle for ${origin}.`);
+
+            compiler.run((err, stats) => {
+              if (err || stats.hasErrors()) {
+                console.log(err, stats);
+              }
+
+              compiler.close(console.error);
+            });
+            return acc;
+            break;
           case ".md":
             return [
               ...(await acc), // Remember: we're in an async reducer
@@ -146,12 +196,8 @@ async function build(acc, origin, destination) {
                 fs.readFile(path.join(origin, file.name), "utf8")
                   .then((md) =>
                     parseMD(md, (postData) => {
-                      let { title, description, date } = postData;
-
                       resolve({
-                        title,
-                        description,
-                        date,
+                        ...postData,
                         url: path.relative(
                           path.join(__dirname, "dist"),
                           destination
@@ -186,13 +232,23 @@ async function build(acc, origin, destination) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const origin = path.join(__dirname, "src");
+const origin = path.join(__dirname, "src", "content");
 const destination = path.join(__dirname, "dist");
 
 const posts = await build([], origin, destination);
 
 Promise.all(posts)
-  .then((x) => x.filter((y) => !Object.values(y).includes(undefined)))
+  .then((x) => {
+    return x
+      .reduce((acc, cur) => {
+        const { content, ...rest } = cur; // Remove "content" property
+
+        !Object.values(rest).includes(undefined) ? rest : null; // Remove whole object if any fields are undefined
+
+        return [...acc, rest];
+      }, [])
+      .sort((a, b) => b.date - a.date);
+  })
   .then((x) =>
     x.reduce((acc, cur) => {
       return acc.concat(indexTemplate(cur));
@@ -207,5 +263,5 @@ const app = express();
 const port = 3000;
 
 app.use(express.static(path.join(__dirname, "dist"))).listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`Blog app listening on port ${port}`);
 });
