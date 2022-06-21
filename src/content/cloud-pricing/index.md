@@ -25,7 +25,7 @@ Below you can see screenshots that I've taken from the following URLs:
 
 The major difference that I see between them, is that while Digital Ocean's page shows actual prices, AWS's and GCP's refer you to pricing calculators, or encourage you to get in touch with a sales representative.
 
-<div class="call-out-note">
+<div class="call-out-indigo">
 
 > Note: I've clipped the footers from each screenshot for space.
 

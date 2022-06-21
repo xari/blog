@@ -3,7 +3,6 @@ import { mkdirSync, promises as fs } from "fs";
 import { fileURLToPath } from "url";
 import path, { dirname } from "path";
 import sharp from "sharp";
-import { DateTime } from "luxon";
 import { JSDOM } from "jsdom";
 import YAML from "yaml";
 import MarkdownIt from "markdown-it";
@@ -46,41 +45,100 @@ const getWebpackConfig = (file, destination) => ({
   },
 });
 
-function blogPreview({ title, description, date, path }) {
-  const link = `<a href=${path}>${title}</a>`;
-  const time = `<time datetime="${date}">${DateTime.fromISO(
-    date
-  ).toLocaleString(DateTime.DATE_FULL)}</time>`;
+function createPreviewContent(dom) {
+  return ({ title, description, date, path }) => {
+    const article = dom.window.document.createElement("article");
+    const header = dom.window.document.createElement("header");
+    const heading = dom.window.document.createElement("h2");
+    const anchor = dom.window.document.createElement("a");
+    const small = dom.window.document.createElement("small");
+    const time = dom.window.document.createElement("time");
+    const section = dom.window.document.createElement("section");
+    const p = dom.window.document.createElement("p");
 
-  return `<blog-preview>
-<span slot="link">${link}</span>
-<span slot="date">${time}</span>
-<span slot="description">${description}</span>
-  </blog-preview>`;
+    article.classList.add("blog-preview");
+
+    anchor.href = path;
+    anchor.textContent = title;
+
+    time.datetime = date;
+    time.textContent = date.toDateString();
+
+    p.textContent = description;
+
+    heading.appendChild(anchor);
+    small.appendChild(time);
+    header.appendChild(heading);
+    header.appendChild(small);
+    section.appendChild(p);
+    article.appendChild(header);
+    article.appendChild(section);
+
+    return article;
+  };
 }
 
-function blogPost({ title, description, date, content }) {
-  const time = `<time datetime="${date}">${DateTime.fromISO(
-    date
-  ).toLocaleString(DateTime.DATE_FULL)}</time>`;
+function createBlogPage(dom) {
+  return (blogPost) => {
+    const titleAnchor = dom.window.document.createElement("a");
 
-  return `<blog-post>
-<span slot="title">${title}</span>
-<span slot="date">${time}</span>
-<span slot="content">${content}</span>
-  </blog-post>`;
+    titleAnchor.textContent = "Ideas in Development";
+    titleAnchor.href = "https://www.xari.dev";
+
+    dom.window.document.getElementById("title").replaceWith(titleAnchor);
+
+    const article = dom.window.document.createElement("article");
+    const header = dom.window.document.createElement("header");
+    const heading = dom.window.document.createElement("h1");
+    const time = dom.window.document.createElement("time");
+    const section = dom.window.document.createElement("section");
+
+    article.classList.add("blog-content");
+
+    heading.textContent = blogPost.title;
+
+    time.datetime = blogPost.date;
+    time.textContent = blogPost.date.toDateString();
+
+    section.innerHTML = blogPost.content;
+
+    header.appendChild(time);
+    header.appendChild(heading);
+    article.appendChild(header);
+    article.appendChild(section);
+    dom.window.document.getElementById("content").replaceWith(article);
+
+    const head = dom.window.document.querySelector("head");
+    const indexCSS = dom.window.document.createElement("link");
+    const prismCSS = dom.window.document.createElement("link");
+
+    indexCSS.rel = "stylesheet";
+    indexCSS.href = path.join(__dirname, "index.css");
+
+    head.appendChild(indexCSS);
+
+    prismCSS.rel = "stylesheet";
+    prismCSS.href = path.join(__dirname, "prism.css");
+
+    head.appendChild(prismCSS);
+
+    return dom;
+  };
 }
 
-function previewWrapper(content) {
-  return `<preview-wrapper>
-<span slot="content">${content}</span>
-  </preview-wrapper>`;
-}
+function createIndexTitle(dom) {
+  const titleHeading = dom.window.document.createElement("h1");
+  const titleAnchor = dom.window.document.createElement("a");
 
-function blogPostWrapper(content) {
-  return `<blog-wrapper>
-<span slot="content">${content}</span>
-  </blog-wrapper>`;
+  titleHeading.classList.add("index-title");
+
+  titleAnchor.textContent = "Ideas in Development";
+  titleAnchor.href = "https://www.xari.dev";
+
+  titleHeading.appendChild(titleAnchor);
+  dom.window.document.getElementById("title").replaceWith(titleHeading);
+
+  return dom;
 }
 
 function parsePost(md) {
@@ -106,15 +164,6 @@ function parsePost(md) {
   };
 }
 
-function handleImg(origin, destination) {
-  sharp(origin)
-    .resize({
-      width: 600,
-      fit: "inside",
-    })
-    .toFile(destination);
-}
-
 // Resolves to an object, each of whose properties is an array of files
 async function getFileStructure(fileStructure, origin) {
   return await fs.readdir(origin, { withFileTypes: true }).then((files) => {
@@ -124,7 +173,7 @@ async function getFileStructure(fileStructure, origin) {
       } else {
         return (await acc).hasOwnProperty(path.extname(file.name))
           ? {
-              ...(await acc),
+              ...(await acc), // Remember: getFileStructure is async & recursive
               [path.extname(file.name)]: [
                 ...(await acc)[path.extname(file.name)],
                 {
@@ -143,17 +192,11 @@ async function getFileStructure(fileStructure, origin) {
 }
 
 async function getFileContent(file) {
-  const blogContent = await fs
-    .readFile(file.path, "utf8")
-    .then(parsePost)
-    .then((postData) => ({
-      ...postData,
-      content: blogPostWrapper(blogPost(postData)),
-    }));
+  const content = await fs.readFile(file.path, "utf8").then(parsePost);
 
   return {
     ...file,
-    content: blogContent,
+    content,
   };
 }
 
@@ -176,18 +219,28 @@ const { md, js, img } = await getFileStructure(
     .reduce(function (paths, key) {
       return paths.concat(img[key]);
     }, [])
-    .map(({ path }) => {
-      return sharp(path).resize({
+    .map(({ path: _path }) => ({
+      path: path.relative(origin, _path),
+      sharp: sharp(_path).resize({
         width: 600,
         fit: "inside",
-      });
-    });
+      }),
+    }));
 
   return {
     md: _md,
     js: _js,
     img: _img,
   };
+});
+
+// Write the image files
+img.forEach(({ path: _path, sharp }) => {
+  mkdirSync(path.join(destination, path.parse(_path).dir), {
+    recursive: true,
+  });
+
+  sharp.toFile(path.join(destination, _path));
 });
 
 // Create the blog posts
@@ -198,14 +251,9 @@ const posts = await Promise.all(md)
       title: blogPost.title,
       date: blogPost.date,
       description: blogPost.description,
-      content: JSDOM.fromFile(path.join(__dirname, "index.html")).then(
-        (dom) => {
-          dom.window.document.getElementById("content").innerHTML =
-            blogPost.content;
-
-          return dom.serialize();
-        }
-      ),
+      content: JSDOM.fromFile(path.join(__dirname, "index.html"))
+        .then((dom) => createBlogPage(dom)(blogPost))
+        .then((dom) => dom.serialize()),
     }))
   )
   .then((x) =>
@@ -225,69 +273,28 @@ const posts = await Promise.all(md)
 // Create the front-page
 Promise.all(posts)
   .then((x) =>
-    JSDOM.fromFile(path.join(__dirname, "index.html")).then((dom) => {
-      dom.window.document.getElementById("content").innerHTML = previewWrapper(
-        x.map(blogPreview)
-      );
+    JSDOM.fromFile(path.join(__dirname, "index.html"))
+      .then((dom) => {
+        const head = dom.window.document.querySelector("head");
+        const indexCSS = dom.window.document.createElement("link");
 
-      return dom.serialize();
-    })
+        indexCSS.rel = "stylesheet";
+        indexCSS.href = path.join(__dirname, "index.css");
+
+        head.appendChild(indexCSS);
+
+        return dom;
+      })
+      .then(createIndexTitle)
+      .then((dom) => {
+        dom.window.document
+          .getElementById("content")
+          .replaceWith(...x.map((post) => createPreviewContent(dom)(post)));
+
+        return dom;
+      })
+      .then((dom) => dom.serialize())
   )
   .then(async (html) =>
     fs.writeFile(path.join(destination, "index.html"), await html)
   );
-
-// Compile the JS
-// js.forEach((compiler) =>
-//   compiler.run((err, stats) => {
-//     if (err || stats.hasErrors()) {
-//       console.log(err, stats);
-//     }
-//
-//     compiler.close(console.error);
-//   })
-// );
-
-// Write the images
-// img.forEach((x) => x.toFile(destination));
-
-// Promise.all(files[".md"]).then(console.log);
-
-// dateString: DateTime.fromISO(date).toLocaleString(DateTime.DATE_FULL),
-
-// const withContent = files.map(getFileContent);
-
-// files.Promise.all(files)
-//   .then((obj) => {
-//     fs.writeFile(
-//       `${path.join(destination, path.parse(file.name).name)}.json`,
-//       JSON.stringify(obj)
-//     );
-//
-//     return obj;
-//   })
-//   .then((x) => {
-//     return x
-//       .reduce((acc, cur) => {
-//         const { content, ...rest } = cur; // Remove "content" property
-//
-//         !Object.values(rest).includes(undefined) ? rest : null; // Remove whole object if any fields are undefined
-//
-//         return [...acc, rest];
-//       }, [])
-//       .sort((a, b) => b.date - a.date);
-//   })
-//   .then((x) =>
-//     x.reduce((acc, cur) => {
-//       return acc.concat(blogPreview(cur));
-//     }, "")
-//   )
-//   .then(previewWrapper)
-//   .then((html) =>
-//     JSDOM.fromFile(path.join(__dirname, "index.html")).then((dom) => {
-//       dom.window.document.getElementById("content").innerHTML = html;
-//
-//       return dom.serialize();
-//     })
-//   )
-//   .then((html) => fs.writeFile(path.join(destination, "index.html"), html));
