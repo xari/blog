@@ -80,13 +80,6 @@ function createPreviewContent(dom) {
 
 function createBlogPage(dom) {
   return (blogPost) => {
-    const titleAnchor = dom.window.document.createElement("a");
-
-    titleAnchor.textContent = "Ideas in Development";
-    titleAnchor.href = "https://www.xari.dev";
-
-    dom.window.document.getElementById("title").replaceWith(titleAnchor);
-
     const article = dom.window.document.createElement("article");
     const header = dom.window.document.createElement("header");
     const heading = dom.window.document.createElement("h1");
@@ -107,20 +100,6 @@ function createBlogPage(dom) {
     article.appendChild(header);
     article.appendChild(section);
     dom.window.document.getElementById("content").replaceWith(article);
-
-    const head = dom.window.document.querySelector("head");
-    const indexCSS = dom.window.document.createElement("link");
-    const prismCSS = dom.window.document.createElement("link");
-
-    indexCSS.rel = "stylesheet";
-    indexCSS.href = path.join(__dirname, "index.css");
-
-    head.appendChild(indexCSS);
-
-    prismCSS.rel = "stylesheet";
-    prismCSS.href = path.join(__dirname, "prism.css");
-
-    head.appendChild(prismCSS);
 
     return dom;
   };
@@ -252,6 +231,51 @@ const posts = await Promise.all(md)
       date: blogPost.date,
       description: blogPost.description,
       content: JSDOM.fromFile(path.join(__dirname, "index.html"))
+        .then((dom) => {
+          const head = dom.window.document.querySelector("head");
+          const indexCSS = dom.window.document.createElement("link");
+          const prismCSS = dom.window.document.createElement("link");
+
+          indexCSS.rel = "stylesheet";
+          indexCSS.href = path.relative(
+            path.relative(
+              path.join("src", "content"),
+              path.parse(postData.path).dir
+            ),
+            path.join(__dirname, "index.css")
+          );
+
+          head.appendChild(indexCSS);
+
+          prismCSS.rel = "stylesheet";
+          prismCSS.href = path.relative(
+            path.relative(
+              path.join("src", "content"),
+              path.parse(postData.path).dir
+            ),
+            path.join(__dirname, "prism.css")
+          );
+
+          head.appendChild(prismCSS);
+
+          return dom;
+        })
+        .then((dom) => {
+          const titleAnchor = dom.window.document.createElement("a");
+
+          titleAnchor.textContent = "Ideas in Development";
+          titleAnchor.href = path.relative(
+            path.relative(
+              path.join("src", "content"),
+              path.parse(postData.path).dir
+            ),
+            path.join(__dirname, "index.html")
+          );
+
+          dom.window.document.getElementById("title").replaceWith(titleAnchor);
+
+          return dom;
+        })
         .then((dom) => createBlogPage(dom)(blogPost))
         .then((dom) => dom.serialize()),
     }))
@@ -279,7 +303,7 @@ Promise.all(posts)
         const indexCSS = dom.window.document.createElement("link");
 
         indexCSS.rel = "stylesheet";
-        indexCSS.href = path.join(__dirname, "index.css");
+        indexCSS.href = "./index.css";
 
         head.appendChild(indexCSS);
 
