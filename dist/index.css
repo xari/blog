@@ -1,0 +1,224 @@
+@font-face {
+  font-family: "Rosario";
+  font-style: normal;
+  src: url(./dist/fonts/rosario/Rosario-VariableFont_wght.ttf)
+    format("truetype-variations");
+}
+
+@font-face {
+  font-family: "Rosario";
+  font-style: italic;
+  src: url(./dist/fonts/rosario/Rosario-Italic-VariableFont_wght.ttf)
+    format("truetype-variations");
+}
+
+@font-face {
+  font-family: "Crimson Pro";
+  font-style: normal;
+  src: url(./dist/fonts/crimson_pro/CrimsonPro-VariableFont_wght.ttf)
+    format("truetype-variations");
+}
+
+@font-face {
+  font-family: "Crimson Pro";
+  font-style: italic;
+  src: url(./dist/fonts/crimson_pro/CrimsonPro-Italic-VariableFont_wght.ttf)
+    format("truetype-variations");
+}
+
+/***
+    The new CSS reset - version 1.6.0 (last updated 29.4.2022)
+    GitHub page: https://github.com/elad2412/the-new-css-reset
+***/
+
+/*
+    Remove all the styles of the "User-Agent-Stylesheet", except for the 'display' property
+    - The "symbol *" part is to solve Firefox SVG sprite bug
+ */
+*:where(:not(html, iframe, canvas, img, svg, video):not(svg *, symbol *)) {
+  all: unset;
+  display: revert;
+}
+
+/* Preferred box-sizing value */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Reapply the pointer cursor for anchor tags */
+a,
+button {
+  cursor: revert;
+}
+
+/* Remove list styles (bullets/numbers) */
+ol,
+ul,
+menu {
+  list-style: none;
+}
+
+/* For images to not be able to exceed their container */
+img {
+  max-width: 100%;
+}
+
+/* removes spacing between cells in tables */
+table {
+  border-collapse: collapse;
+}
+
+/* revert the 'white-space' property for textarea elements on Safari */
+textarea {
+  white-space: revert;
+}
+
+/* minimum style to allow to style meter element */
+meter {
+  -webkit-appearance: revert;
+  appearance: revert;
+}
+
+/* reset default text opacity of input placeholder */
+::placeholder {
+  color: unset;
+}
+
+/* fix the feature of 'hidden' attribute.
+   display:revert; revert to element instead of attribute */
+:where([hidden]) {
+  display: none;
+}
+
+/* revert for bug in Chromium browsers
+   - fix for the content editable attribute will work properly. */
+:where([contenteditable]) {
+  -moz-user-modify: read-write;
+  -webkit-user-modify: read-write;
+  overflow-wrap: break-word;
+  -webkit-line-break: after-white-space;
+}
+
+/* apply back the draggable feature - exist only in Chromium and Safari */
+:where([draggable="true"]) {
+  -webkit-user-drag: element;
+}
+
+body {
+  font-family: Crimson Pro, ui-serif;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  color: hsla(0, 0%, 0%, 0.73);
+  padding: 1.25rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+body > header {
+  font-family: "Rosario", serif;
+}
+
+a {
+  color: #ff5700;
+}
+
+blockquote {
+  border-left-width: 4px;
+  border-left-style: solid;
+  border-left-color: #ff5700;
+  color: hsla(0, 0%, 0%, 0.59);
+  font-style: italic;
+  line-height: 2rem;
+  padding: 0.1rem 1.25rem;
+}
+
+h1,
+h2,
+h3 {
+  margin: 2rem 0;
+  font-family: Rosario, serif;
+}
+
+ol,
+ul,
+menu,
+p,
+blockquote {
+  margin: 2rem 0;
+}
+
+.index-title {
+  margin: 2rem 0 4rem 0;
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.index-title a {
+  -webkit-text-stroke: 1px hsla(0, 0%, 0%, 0.73);
+  color: #055e86;
+  text-decoration: none;
+}
+
+.blog-preview {
+  max-width: 36rem;
+  margin: 1rem auto 2.5rem 2.5rem;
+}
+
+.blog-preview header {
+  line-height: 0.5rem;
+}
+
+.blog-preview a {
+  font-family: "Rosario", serif;
+  font-size: 1.875rem;
+  line-height: 2.75rem;
+  margin-top: 2.5rem;
+  text-decoration: underline;
+}
+
+.blog-content h1,
+.blog-content h2,
+.blog-content h3,
+.blog-content blockquote,
+.blog-content p {
+  max-width: 48rem;
+}
+
+.blog-content h1 {
+  color: #055e86;
+  font-weight: bold;
+  font-size: 3rem;
+  line-height: 1.15;
+  -webkit-text-stroke: 1px hsla(0, 0%, 0%, 0.73);
+}
+
+.call-out-indigo {
+  background: #b4e6fc;
+  margin: 0 -2rem;
+  padding: 0 2rem;
+  max-width: 72rem;
+}
+
+.call-out-indigo :not(pre) > code[class*="language-"],
+.call-out-indigo pre[class*="language-"] {
+  background: none;
+  border: none;
+  width: calc(100% + 20px);
+}
+
+.call-out-indigo code[class*="language-"] {
+}
+
+.grid {
+  display: grid;
+}
+
+.grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.gap-3 {
+  gap: 0.75rem;
+}
