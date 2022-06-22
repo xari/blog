@@ -187,9 +187,11 @@ blockquote {
 }
 
 .blog-content h1 {
+  color: #055e86;
   font-weight: bold;
   font-size: 3rem;
   line-height: 1.15;
+  -webkit-text-stroke: 1px hsla(0, 0%, 0%, 0.73);
 }
 
 .call-out-indigo {
