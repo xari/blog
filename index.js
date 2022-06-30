@@ -233,6 +233,19 @@ const posts = await Promise.all(md)
           const head = dom.window.document.querySelector("head");
           const indexCSS = dom.window.document.createElement("link");
           const prismCSS = dom.window.document.createElement("link");
+          const favicon = dom.window.document.createElement("link");
+
+          favicon.href = path.relative(
+            path.relative(
+              path.join("src", "content"),
+              path.parse(postData.path).dir
+            ),
+            path.join(__dirname, "favicon.ico")
+          );
+          favicon.rel = "icon";
+          favicon.type = "image/x-icon";
+
+          head.appendChild(favicon);
 
           prismCSS.rel = "stylesheet";
           prismCSS.href = path.relative(
@@ -307,6 +320,13 @@ Promise.all(posts)
       .then((dom) => {
         const head = dom.window.document.querySelector("head");
         const indexCSS = dom.window.document.createElement("link");
+        const favicon = dom.window.document.createElement("link");
+
+        favicon.href = "favicon.ico";
+        favicon.rel = "icon";
+        favicon.type = "image/x-icon";
+
+        head.appendChild(favicon);
 
         indexCSS.rel = "stylesheet";
         indexCSS.href = "./index.css";
