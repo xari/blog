@@ -1,5 +1,5 @@
 import express from "express";
-import { mkdirSync, promises as fs } from "fs";
+import { promises as fs } from "fs";
 import { fileURLToPath } from "url";
 import path, { dirname } from "path";
 import sharp from "sharp";
@@ -214,13 +214,13 @@ const { md, js, img } = await getFileStructure(
 });
 
 // Write the image files
-img.forEach(({ path: _path, sharp }) => {
-  mkdirSync(path.join(destination, path.parse(_path).dir), {
-    recursive: true,
-  });
-
-  sharp.toFile(path.join(destination, _path));
-});
+img.forEach(({ path: _path, sharp }) =>
+  fs
+    .mkdir(path.join(destination, path.parse(_path).dir), {
+      recursive: true,
+    })
+    .then(() => sharp.toFile(path.join(destination, _path)))
+);
 
 // Create the blog posts
 const posts = await Promise.all(md)
@@ -287,10 +287,18 @@ const posts = await Promise.all(md)
         path.relative(origin, path.parse(src_path).dir)
       );
 
-      mkdirSync(destination_path, { recursive: true });
-      fs.writeFile(`${path.join(destination_path, name)}.html`, await content);
+      const url_path = fs
+        .mkdir(destination_path, { recursive: true })
+        .then(async () => {
+          const destination_url = path.join(destination_path, `${name}.html`);
 
-      return { path: path.relative(destination, destination_path), ...details };
+          return fs
+            .writeFile(destination_url, await content)
+            .then(() => destination_url);
+        })
+        .catch(console.error);
+
+      return { path: path.relative(destination, await url_path), ...details };
     })
   );
 
