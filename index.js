@@ -282,23 +282,23 @@ const posts = await Promise.all(md)
           const siteType = dom.window.document.createElement("meta");
           const siteTime = dom.window.document.createElement("meta");
 
-          siteName.property = "og:site_name";
+          siteName.name = "og:site_name";
           siteName.content = "Xari.Dev -Ideas in Development";
 
-          siteTitle.property = "og:title";
+          siteTitle.name = "og:title";
           siteTitle.content = blogPost.title;
 
-          siteDescription.property = "og:description";
+          siteDescription.name = "og:description";
           siteDescription.content = blogPost.description;
 
-          siteImg.property = "og:image";
+          siteImg.name = "og:image";
           siteImg.itemprop = "image";
           siteImg.content = faviconPath;
 
-          siteType.property = "og:type";
+          siteType.name = "og:type";
           siteType.content = "website";
 
-          siteTime.property = "og:updated_time";
+          siteTime.name = "og:updated_time";
           siteTime.content = blogPost.date;
 
           head.appendChild(siteName);
