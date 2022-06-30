@@ -118,7 +118,7 @@ body {
 }
 
 body > header {
-  font-family: "Rosario", serif;
+  font-family: Rosario, serif;
 }
 
 a {
@@ -164,7 +164,7 @@ blockquote {
 }
 
 .index-title {
-  margin: 2rem 0 4rem 0;
+  margin: 0 0 3rem 0;
   font-size: 3rem;
   font-weight: bold;
 }
@@ -176,12 +176,11 @@ blockquote {
 }
 
 .blog-preview {
-  max-width: 36rem;
-  margin: 1rem auto 2.5rem 2.5rem;
+  max-width: 48rem;
 }
 
-.blog-preview header {
-  line-height: 0.5rem;
+.blog-preview h2 {
+  margin-bottom: 0;
 }
 
 .blog-preview a {
@@ -190,6 +189,10 @@ blockquote {
   line-height: 2.75rem;
   margin-top: 2.5rem;
   text-decoration: underline;
+}
+
+.blog-preview p {
+  margin-top: 1rem;
 }
 
 .blog-content h1,
