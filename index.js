@@ -198,7 +198,10 @@ const { md, js, img } = await getFileStructure(
     }, [])
     .map(({ path: _path }) => ({
       path: path.relative(origin, _path),
-      sharp: sharp(_path).resize({
+      sharp: sharp(
+        _path,
+        path.extname(_path) === ".gif" ? { animated: true } : {} // Keeps frames for animated GIFs
+      ).resize({
         width: 600,
         fit: "inside",
       }),
