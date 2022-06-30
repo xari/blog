@@ -1,7 +1,7 @@
 {
     "type": "module",
     "scripts": {
-        "prestart": "mkdir ./dist & cp -r ./src/fonts ./dist/fonts & cp ./node_modules/prismjs/themes/prism.css ./dist & cp ./index.css ./dist/index.css",
+        "prestart": "mkdir -p ./dist & cp -r ./src/fonts ./dist & cp ./node_modules/prismjs/themes/prism.css ./dist & cp ./index.css ./dist/index.css",
         "start": "node ./index.js"
     },
     "dependencies": {
