@@ -284,6 +284,9 @@ const posts = await Promise.all(md)
           siteDescription.name = "description";
           siteDescription.content = blogPost.description;
 
+          head.appendChild(siteName);
+          head.appendChild(siteDescription);
+
           // FaceBook
           const ogName = dom.window.document.createElement("meta");
           const ogTitle = dom.window.document.createElement("meta");
@@ -311,12 +314,12 @@ const posts = await Promise.all(md)
           ogTime.property = "og:updated_time";
           ogTime.content = blogPost.date;
 
-          head.appendChild(siteName);
-          head.appendChild(siteTitle);
-          head.appendChild(siteDescription);
-          head.appendChild(siteImg);
-          head.appendChild(siteType);
-          head.appendChild(siteTime);
+          head.appendChild(ogName);
+          head.appendChild(ogTitle);
+          head.appendChild(ogDescription);
+          head.appendChild(ogImg);
+          head.appendChild(ogType);
+          head.appendChild(ogTime);
 
           // Google+
           const metaName = dom.window.document.createElement("meta");
@@ -331,6 +334,9 @@ const posts = await Promise.all(md)
 
           metaImage.itemprop = "image";
           metaDescription.content = blogPost.faviconPath;
+
+          head.appendChild(metaImage);
+          head.appendChild(metaDescription);
 
           return dom;
         })
