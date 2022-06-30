@@ -51,28 +51,26 @@ function createPreviewContent(dom) {
     const header = dom.window.document.createElement("header");
     const heading = dom.window.document.createElement("h2");
     const anchor = dom.window.document.createElement("a");
-    const small = dom.window.document.createElement("small");
     const time = dom.window.document.createElement("time");
-    const section = dom.window.document.createElement("section");
     const p = dom.window.document.createElement("p");
 
     article.classList.add("blog-preview");
 
+    heading.textContent = title;
+    heading.tabIndex = "0";
+
     anchor.href = path;
-    anchor.textContent = title;
 
     time.datetime = date;
     time.textContent = date.toDateString();
 
     p.textContent = description;
 
-    heading.appendChild(anchor);
-    small.appendChild(time);
-    header.appendChild(heading);
-    header.appendChild(small);
-    section.appendChild(p);
+    anchor.appendChild(heading);
+    header.appendChild(anchor);
+    header.appendChild(time);
     article.appendChild(header);
-    article.appendChild(section);
+    article.appendChild(p);
 
     return article;
   };
@@ -109,12 +107,12 @@ function createIndexTitle(dom) {
   const titleHeading = dom.window.document.createElement("h1");
   const titleAnchor = dom.window.document.createElement("a");
 
-  titleHeading.classList.add("index-title");
-
-  titleAnchor.textContent = "Ideas in Development";
   titleAnchor.href = "https://www.xari.dev";
 
-  titleHeading.appendChild(titleAnchor);
+  titleHeading.classList.add("index-title");
+  titleHeading.textContent = "Ideas in Development";
+
+  titleAnchor.appendChild(titleHeading);
   dom.window.document.getElementById("title").replaceWith(titleHeading);
 
   return dom;
