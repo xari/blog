@@ -1,28 +1,28 @@
 @font-face {
   font-family: "Rosario";
   font-style: normal;
-  src: url(./dist/fonts/rosario/Rosario-VariableFont_wght.ttf)
+  src: url(./fonts/rosario/Rosario-VariableFont_wght.ttf)
     format("truetype-variations");
 }
 
 @font-face {
   font-family: "Rosario";
   font-style: italic;
-  src: url(./dist/fonts/rosario/Rosario-Italic-VariableFont_wght.ttf)
+  src: url(./fonts/rosario/Rosario-Italic-VariableFont_wght.ttf)
     format("truetype-variations");
 }
 
 @font-face {
   font-family: "Crimson Pro";
   font-style: normal;
-  src: url(./dist/fonts/crimson_pro/CrimsonPro-VariableFont_wght.ttf)
+  src: url(./fonts/crimson_pro/CrimsonPro-VariableFont_wght.ttf)
     format("truetype-variations");
 }
 
 @font-face {
   font-family: "Crimson Pro";
   font-style: italic;
-  src: url(./dist/fonts/crimson_pro/CrimsonPro-Italic-VariableFont_wght.ttf)
+  src: url(./fonts/crimson_pro/CrimsonPro-Italic-VariableFont_wght.ttf)
     format("truetype-variations");
 }
 
@@ -141,6 +141,19 @@ h3 {
   font-family: Rosario, serif;
 }
 
+h1 {
+  color: #055e86;
+  font-weight: bold;
+  font-size: xxx-large;
+  line-height: 1.15;
+  -webkit-text-stroke: 1px hsla(0, 0%, 0%, 0.73);
+}
+
+h2 {
+  font-size: xx-large;
+  font-weight: bolder;
+}
+
 ol,
 ul,
 menu,
@@ -186,19 +199,11 @@ blockquote {
   max-width: 48rem;
 }
 
-.blog-content h1 {
-  color: #055e86;
-  font-weight: bold;
-  font-size: 3rem;
-  line-height: 1.15;
-  -webkit-text-stroke: 1px hsla(0, 0%, 0%, 0.73);
-}
-
 .call-out-indigo {
   background: #b4e6fc;
   margin: 0 -2rem;
-  padding: 0 2rem;
-  max-width: 72rem;
+  padding: 1rem 2rem;
+  max-width: calc(48rem + 4rem);
 }
 
 .call-out-indigo :not(pre) > code[class*="language-"],
@@ -221,4 +226,8 @@ blockquote {
 
 .gap-3 {
   gap: 0.75rem;
+}
+
+pre[class*="language-"] {
+  margin: 0.5rem -1.25rem;
 }

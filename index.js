@@ -236,17 +236,6 @@ const posts = await Promise.all(md)
           const indexCSS = dom.window.document.createElement("link");
           const prismCSS = dom.window.document.createElement("link");
 
-          indexCSS.rel = "stylesheet";
-          indexCSS.href = path.relative(
-            path.relative(
-              path.join("src", "content"),
-              path.parse(postData.path).dir
-            ),
-            path.join(__dirname, "index.css")
-          );
-
-          head.appendChild(indexCSS);
-
           prismCSS.rel = "stylesheet";
           prismCSS.href = path.relative(
             path.relative(
@@ -257,6 +246,17 @@ const posts = await Promise.all(md)
           );
 
           head.appendChild(prismCSS);
+
+          indexCSS.rel = "stylesheet";
+          indexCSS.href = path.relative(
+            path.relative(
+              path.join("src", "content"),
+              path.parse(postData.path).dir
+            ),
+            path.join(__dirname, "index.css")
+          );
+
+          head.appendChild(indexCSS);
 
           return dom;
         })
