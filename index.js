@@ -276,30 +276,40 @@ const posts = await Promise.all(md)
           head.appendChild(indexCSS);
 
           const siteName = dom.window.document.createElement("meta");
-          const siteTitle = dom.window.document.createElement("meta");
           const siteDescription = dom.window.document.createElement("meta");
-          const siteImg = dom.window.document.createElement("meta");
-          const siteType = dom.window.document.createElement("meta");
-          const siteTime = dom.window.document.createElement("meta");
 
-          siteName.name = "og:site_name";
-          siteName.content = "Xari.Dev -Ideas in Development";
+          siteName.name = "title";
+          siteName.content = blogPost.title;
 
-          siteTitle.name = "og:title";
-          siteTitle.content = blogPost.title;
-
-          siteDescription.name = "og:description";
+          siteDescription.name = "description";
           siteDescription.content = blogPost.description;
 
-          siteImg.name = "og:image";
-          siteImg.itemprop = "image";
-          siteImg.content = faviconPath;
+          // FaceBook
+          const ogName = dom.window.document.createElement("meta");
+          const ogTitle = dom.window.document.createElement("meta");
+          const ogDescription = dom.window.document.createElement("meta");
+          const ogImg = dom.window.document.createElement("meta");
+          const ogType = dom.window.document.createElement("meta");
+          const ogTime = dom.window.document.createElement("meta");
 
-          siteType.name = "og:type";
-          siteType.content = "website";
+          ogName.property = "og:site_name";
+          ogName.content = "Xari.Dev -Ideas in Development";
 
-          siteTime.name = "og:updated_time";
-          siteTime.content = blogPost.date;
+          ogTitle.property = "og:title";
+          ogTitle.content = blogPost.title;
+
+          ogDescription.property = "og:description";
+          ogDescription.content = blogPost.description;
+
+          ogImg.property = "og:image";
+          ogImg.itemprop = "image";
+          ogImg.content = faviconPath;
+
+          ogType.property = "og:type";
+          ogType.content = "website";
+
+          ogTime.property = "og:updated_time";
+          ogTime.content = blogPost.date;
 
           head.appendChild(siteName);
           head.appendChild(siteTitle);
@@ -307,6 +317,20 @@ const posts = await Promise.all(md)
           head.appendChild(siteImg);
           head.appendChild(siteType);
           head.appendChild(siteTime);
+
+          // Google+
+          const metaName = dom.window.document.createElement("meta");
+          const metaDescription = dom.window.document.createElement("meta");
+          const metaImage = dom.window.document.createElement("meta");
+
+          metaName.itemprop = "name";
+          metaName.content = blogPost.title;
+
+          metaDescription.itemprop = "description";
+          metaDescription.content = blogPost.description;
+
+          metaImage.itemprop = "image";
+          metaDescription.content = blogPost.faviconPath;
 
           return dom;
         })
