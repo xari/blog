@@ -234,21 +234,22 @@ const posts = await Promise.all(md)
       content: JSDOM.fromFile(path.join(__dirname, "index.html"))
         .then((dom) => {
           const head = dom.window.document.querySelector("head");
-          const indexCSS = dom.window.document.createElement("link");
-          const prismCSS = dom.window.document.createElement("link");
           const favicon = dom.window.document.createElement("link");
-
-          favicon.href = path.relative(
+          const faviconPath = path.relative(
             path.relative(
               path.join("src", "content"),
               path.parse(postData.path).dir
             ),
             path.join(__dirname, "favicon.ico")
           );
+
+          favicon.href = faviconPath;
           favicon.rel = "icon";
           favicon.type = "image/x-icon";
 
           head.appendChild(favicon);
+
+          const prismCSS = dom.window.document.createElement("link");
 
           prismCSS.rel = "stylesheet";
           prismCSS.href = path.relative(
@@ -261,6 +262,8 @@ const posts = await Promise.all(md)
 
           head.appendChild(prismCSS);
 
+          const indexCSS = dom.window.document.createElement("link");
+
           indexCSS.rel = "stylesheet";
           indexCSS.href = path.relative(
             path.relative(
@@ -271,6 +274,39 @@ const posts = await Promise.all(md)
           );
 
           head.appendChild(indexCSS);
+
+          const siteName = dom.window.document.createElement("meta");
+          const siteTitle = dom.window.document.createElement("meta");
+          const siteDescription = dom.window.document.createElement("meta");
+          const siteImg = dom.window.document.createElement("meta");
+          const siteType = dom.window.document.createElement("meta");
+          const siteTime = dom.window.document.createElement("meta");
+
+          siteName.property = "og:site_name";
+          siteName.content = "Xari.Dev -Ideas in Development";
+
+          siteTitle.property = "og:title";
+          siteTitle.content = blogPost.title;
+
+          siteDescription.property = "og:description";
+          siteDescription.content = blogPost.description;
+
+          siteImg.property = "og:image";
+          siteImg.itemprop = "image";
+          siteImg.content = faviconPath;
+
+          siteType.property = "og:type";
+          siteType.content = "website";
+
+          siteTime.property = "og:updated_time";
+          siteTime.content = blogPost.date;
+
+          head.appendChild(siteName);
+          head.appendChild(siteTitle);
+          head.appendChild(siteDescription);
+          head.appendChild(siteImg);
+          head.appendChild(siteType);
+          head.appendChild(siteTime);
 
           return dom;
         })
