@@ -119,7 +119,7 @@ function createIndexTitle(dom) {
 }
 
 function parsePost(md) {
-  let title, description, date; // frontmatter
+  let title, description, date, image; // frontmatter
 
   const content = MarkdownIt({
     html: true,
@@ -128,7 +128,8 @@ function parsePost(md) {
   })
     .use(
       front_matter_plugin,
-      (frontmatter) => ({ title, description, date } = YAML.parse(frontmatter))
+      (frontmatter) =>
+        ({ title, description, date, image } = YAML.parse(frontmatter))
     )
     .use(prism_plugin)
     .render(md);
@@ -137,6 +138,7 @@ function parsePost(md) {
     title,
     description,
     date: new Date(date),
+    image,
     content,
   };
 }
@@ -180,8 +182,8 @@ async function getFileContent(file) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const origin = path.join(__dirname, "src", "content");
-const destination = path.join(__dirname, "dist");
+const origin = path.join(__dirname, "src");
+const __destination = path.join(__dirname, "dist");
 
 const fileTypes = [".md", ".js", ".png", ".jpg", ".jpeg", ".svg", ".gif"];
 
@@ -191,13 +193,11 @@ const { md, js, img } = await getFileStructure(
   origin
 ).then(({ ".md": md, ".js": js, ...img }) => {
   const _md = md.map(getFileContent);
-  const _js = js.map((file) => webpack(getWebpackConfig(file, destination)));
+  const _js = js.map((file) => webpack(getWebpackConfig(file, __destination)));
   const _img = Object.keys(img)
-    .reduce(function (paths, key) {
-      return paths.concat(img[key]);
-    }, [])
+    .reduce((paths, key) => paths.concat(img[key]), [])
     .map(({ path: _path }) => ({
-      path: path.relative(origin, _path),
+      path: path.relative(path.join(origin, "content"), _path),
       sharp: sharp(
         _path,
         path.extname(_path) === ".gif" ? { animated: true } : {} // Keeps frames for animated GIFs
@@ -217,168 +217,168 @@ const { md, js, img } = await getFileStructure(
 // Write the image files
 img.forEach(({ path: _path, sharp }) =>
   fs
-    .mkdir(path.join(destination, path.parse(_path).dir), {
+    .mkdir(path.join(__destination, path.parse(_path).dir), {
       recursive: true,
     })
-    .then(() => sharp.toFile(path.join(destination, _path)))
+    .then(() => sharp.toFile(path.join(__destination, _path)))
 );
 
 // Create the blog posts
 const posts = await Promise.all(md)
   .then((x) =>
-    x.map(({ content: blogPost, ...postData }) => ({
-      ...postData,
-      title: blogPost.title,
-      date: blogPost.date,
-      description: blogPost.description,
-      content: JSDOM.fromFile(path.join(__dirname, "index.html"))
-        .then((dom) => {
-          const head = dom.window.document.querySelector("head");
-          const favicon = dom.window.document.createElement("link");
-          const faviconPath = path.relative(
-            path.relative(
-              path.join("src", "content"),
-              path.parse(postData.path).dir
-            ),
-            path.join(__dirname, "favicon.ico")
-          );
+    x.map(({ content: blogPost, path: postPath, ...postData }) => {
+      const relPostPath = path.relative(
+        path.join(__dirname, "src", "content"),
+        postPath
+      );
+      const destinationPath = path.parse(
+        path.join(__destination, relPostPath)
+      ).dir;
 
-          favicon.href = faviconPath;
-          favicon.rel = "icon";
-          favicon.type = "image/x-icon";
+      return {
+        ...postData,
+        path: destinationPath,
+        title: blogPost.title,
+        date: blogPost.date,
+        description: blogPost.description,
+        content: JSDOM.fromFile(path.join(__dirname, "index.html"))
+          .then((dom) => {
+            const head = dom.window.document.querySelector("head");
 
-          head.appendChild(favicon);
+            const favicon = dom.window.document.createElement("link");
+            const faviconPath = path.relative(
+              destinationPath,
+              path.join(__destination, "favicon.ico")
+            );
 
-          const prismCSS = dom.window.document.createElement("link");
+            favicon.href = faviconPath;
+            favicon.rel = "icon";
+            favicon.type = "image/x-icon";
 
-          prismCSS.rel = "stylesheet";
-          prismCSS.href = path.relative(
-            path.relative(
-              path.join("src", "content"),
-              path.parse(postData.path).dir
-            ),
-            path.join(__dirname, "prism.css")
-          );
+            head.appendChild(favicon);
 
-          head.appendChild(prismCSS);
+            const prismCSS = dom.window.document.createElement("link");
 
-          const indexCSS = dom.window.document.createElement("link");
+            prismCSS.rel = "stylesheet";
+            prismCSS.href = path.relative(
+              destinationPath,
+              path.join(__destination, "prism.css")
+            );
 
-          indexCSS.rel = "stylesheet";
-          indexCSS.href = path.relative(
-            path.relative(
-              path.join("src", "content"),
-              path.parse(postData.path).dir
-            ),
-            path.join(__dirname, "index.css")
-          );
+            head.appendChild(prismCSS);
 
-          head.appendChild(indexCSS);
+            const indexCSS = dom.window.document.createElement("link");
 
-          const siteName = dom.window.document.createElement("meta");
-          const siteDescription = dom.window.document.createElement("meta");
+            indexCSS.rel = "stylesheet";
+            indexCSS.href = path.relative(
+              destinationPath,
+              path.join(__destination, "index.css")
+            );
 
-          siteName.name = "title";
-          siteName.content = blogPost.title;
+            head.appendChild(indexCSS);
 
-          siteDescription.name = "description";
-          siteDescription.content = blogPost.description;
+            const siteName = dom.window.document.createElement("meta");
+            const siteDescription = dom.window.document.createElement("meta");
 
-          head.appendChild(siteName);
-          head.appendChild(siteDescription);
+            siteName.name = "title";
+            siteName.content = blogPost.title;
 
-          // FaceBook
-          const ogName = dom.window.document.createElement("meta");
-          const ogTitle = dom.window.document.createElement("meta");
-          const ogDescription = dom.window.document.createElement("meta");
-          const ogImg = dom.window.document.createElement("meta");
-          const ogType = dom.window.document.createElement("meta");
-          const ogTime = dom.window.document.createElement("meta");
+            siteDescription.name = "description";
+            siteDescription.content = blogPost.description;
 
-          ogName.property = "og:site_name";
-          ogName.content = "Xari.Dev -Ideas in Development";
+            head.appendChild(siteName);
+            head.appendChild(siteDescription);
 
-          ogTitle.property = "og:title";
-          ogTitle.content = blogPost.title;
+            // Defined in blog post YAML, or defaults to something else
+            const previewImgPath = blogPost.image
+              ? blogPost.image
+              : path.resolve(__destination, "preview.png");
 
-          ogDescription.property = "og:description";
-          ogDescription.content = blogPost.description;
+            // FaceBook
+            const ogName = dom.window.document.createElement("meta");
+            const ogTitle = dom.window.document.createElement("meta");
+            const ogDescription = dom.window.document.createElement("meta");
+            const ogImg = dom.window.document.createElement("meta");
+            const ogType = dom.window.document.createElement("meta");
+            const ogTime = dom.window.document.createElement("meta");
 
-          ogImg.property = "og:image";
-          ogImg.itemprop = "image";
-          ogImg.content = faviconPath;
+            ogName.setAttribute("property", "og:site_name");
+            ogName.setAttribute("content", "Xari.Dev -Ideas in Development");
 
-          ogType.property = "og:type";
-          ogType.content = "website";
+            ogTitle.setAttribute("property", "og:title");
+            ogTitle.setAttribute("content", blogPost.title);
 
-          ogTime.property = "og:updated_time";
-          ogTime.content = blogPost.date;
+            ogDescription.setAttribute("property", "og:description");
+            ogDescription.setAttribute("content", blogPost.description);
 
-          head.appendChild(ogName);
-          head.appendChild(ogTitle);
-          head.appendChild(ogDescription);
-          head.appendChild(ogImg);
-          head.appendChild(ogType);
-          head.appendChild(ogTime);
+            ogImg.setAttribute("property", "og:image");
+            ogImg.setAttribute("content", previewImgPath);
 
-          // Google+
-          const metaName = dom.window.document.createElement("meta");
-          const metaDescription = dom.window.document.createElement("meta");
-          const metaImage = dom.window.document.createElement("meta");
+            ogType.setAttribute("property", "og:type");
+            ogType.setAttribute("content", "website");
 
-          metaName.itemprop = "name";
-          metaName.content = blogPost.title;
+            ogTime.setAttribute("property", "og:updated_time");
+            ogTime.setAttribute("content", blogPost.date);
 
-          metaDescription.itemprop = "description";
-          metaDescription.content = blogPost.description;
+            head.appendChild(ogName);
+            head.appendChild(ogTitle);
+            head.appendChild(ogDescription);
+            head.appendChild(ogImg);
+            head.appendChild(ogType);
+            head.appendChild(ogTime);
 
-          metaImage.itemprop = "image";
-          metaDescription.content = blogPost.faviconPath;
+            // Google+
+            const metaName = dom.window.document.createElement("meta");
+            const metaDescription = dom.window.document.createElement("meta");
+            const metaImg = dom.window.document.createElement("meta");
 
-          head.appendChild(metaImage);
-          head.appendChild(metaDescription);
+            metaName.setAttribute("itemprop", "name");
+            metaName.setAttribute("content", blogPost.title);
 
-          return dom;
-        })
-        .then((dom) => {
-          const titleAnchor = dom.window.document.createElement("a");
+            metaDescription.setAttribute("itemprop", "description");
+            metaDescription.setAttribute("content", blogPost.description);
 
-          titleAnchor.textContent = "Ideas in Development";
-          titleAnchor.href = path.relative(
-            path.relative(
-              path.join("src", "content"),
-              path.parse(postData.path).dir
-            ),
-            path.join(__dirname, "index.html")
-          );
+            metaImg.setAttribute("itemprop", "image");
+            metaImg.setAttribute("content", previewImgPath);
 
-          dom.window.document.getElementById("title").replaceWith(titleAnchor);
+            head.appendChild(metaName);
+            head.appendChild(metaDescription);
+            head.appendChild(metaImg);
 
-          return dom;
-        })
-        .then((dom) => createBlogPage(dom)(blogPost))
-        .then((dom) => dom.serialize()),
-    }))
+            return dom;
+          })
+          .then((dom) => {
+            const titleAnchor = dom.window.document.createElement("a");
+
+            titleAnchor.textContent = "Ideas in Development";
+            titleAnchor.href = path.relative(
+              destinationPath,
+              path.join(__destination, "index.html")
+            );
+
+            dom.window.document
+              .getElementById("title")
+              .replaceWith(titleAnchor);
+
+            return dom;
+          })
+          .then((dom) => createBlogPage(dom)(blogPost))
+          .then((dom) => dom.serialize()),
+      };
+    })
   )
   .then((x) =>
-    x.map(async ({ name, path: src_path, content, ...details }) => {
-      const destination_path = path.join(
-        destination,
-        path.relative(origin, path.parse(src_path).dir)
-      );
-
-      const url_path = fs
-        .mkdir(destination_path, { recursive: true })
+    x.map(async ({ name, path: destinationPath, content, ...details }) => {
+      const fileURL = fs
+        .mkdir(destinationPath, { recursive: true })
         .then(async () => {
-          const destination_url = path.join(destination_path, `${name}.html`);
+          const fileURL = path.join(destinationPath, `${name}.html`);
 
-          return fs
-            .writeFile(destination_url, await content)
-            .then(() => destination_url);
+          return fs.writeFile(fileURL, await content).then(() => fileURL);
         })
         .catch(console.error);
 
-      return { path: path.relative(destination, await url_path), ...details };
+      return { path: path.relative(__destination, await fileURL), ...details };
     })
   );
 
@@ -415,5 +415,5 @@ Promise.all(posts)
       .then((dom) => dom.serialize())
   )
   .then(async (html) =>
-    fs.writeFile(path.join(destination, "index.html"), await html)
+    fs.writeFile(path.join(__destination, "index.html"), await html)
   );
