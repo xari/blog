@@ -2,6 +2,7 @@
 title: Horizontal Bar Plot With D3
 date: 2022-01-21
 description: A step-by step guide to plotting a custom D3 bar chart.
+image: ./time_lapse.gif
 ---
 
 <div class="call-out-indigo">
@@ -48,14 +49,14 @@ Let's set-up our SVG and append it to the document that we're working with.
 If you need help with the code below, check-out the [introduction to this series](../data-wrangling-with-js).
 
 ```js
-const width = 680
-const height = 480
+const width = 680;
+const height = 480;
 
 const svg = body
   .append("svg")
   .attr("xmlns", "http://www.w3.org/2000/svg")
   .attr("width", width)
-  .attr("height", height)
+  .attr("height", height);
 ```
 
 Now that our SVG element is appended to the document's body, let's add a full-height-and-width white background and black border to it.
@@ -70,7 +71,7 @@ const documentOutline = svg
   .attr("x", 0)
   .attr("y", 0)
   .style("stroke", "#000")
-  .style("fill", "none")
+  .style("fill", "none");
 ```
 
 ![Outline](./outline.svg)
@@ -78,9 +79,9 @@ const documentOutline = svg
 Let's also create another temporary outline that indicates where the horizontal bars will eventually go.
 
 ```js
-const margin = { top: 80, right: 50, bottom: 60, left: 200 }
-const plotHeight = height - margin.top - margin.bottom
-const plotWidth = width - margin.left - margin.right
+const margin = { top: 80, right: 50, bottom: 60, left: 200 };
+const plotHeight = height - margin.top - margin.bottom;
+const plotWidth = width - margin.left - margin.right;
 
 const plotOutline = svg
   .append("rect")
@@ -88,7 +89,7 @@ const plotOutline = svg
   .attr("y", margin.top)
   .attr("height", plotHeight)
   .attr("width", plotWidth)
-  .style("fill", "#00AFDB")
+  .style("fill", "#00AFDB");
 ```
 
 Creating variables for `plotHeight` and `plotWidth` will help us when it comes time to create and position other elements of the chart like axis labels, and even the horizontal bars themselves.
@@ -105,7 +106,7 @@ It's ordered by _descending_ `value`.
 Here's a look at that first array item once again:
 
 ```js
-ibu[0] // { "name": "Tactical Nuclear Penguin", "ibu": 1157 }
+ibu[0]; // { "name": "Tactical Nuclear Penguin", "ibu": 1157 }
 ```
 
 We create a scale in D3 by calling a scale function —in this case `scaleLinear()` —and providing it with a domain and a range.
@@ -116,7 +117,7 @@ The range goes from `0` to `430`, because we want the axis line to begin at 0 an
 const scaleX = d3
   .scaleLinear()
   .domain([0, ibu.at(0).value])
-  .range([0, plotWidth])
+  .range([0, plotWidth]);
 ```
 
 We can generate everything we need for the X axis by calling `d3.axisBottom(scaleX)`.
@@ -127,9 +128,9 @@ If you've read the [post on binding data to DOM elements](../binding-data-d3) yo
 const axisX = svg
   .append("g")
   .attr("transform", `translate(0, ${plotHeight})`)
-  .call(d3.axisBottom(scaleX))
+  .call(d3.axisBottom(scaleX));
 
-axisX // Selection { _groups: [ [ [SVGSVGElement] ] ], _parents: [ null ] }
+axisX; // Selection { _groups: [ [ [SVGSVGElement] ] ], _parents: [ null ] }
 ```
 
 ![X axis](./x_axis.svg)
@@ -145,9 +146,9 @@ The code below will do _almost_ the same thing, but with one major difference:
 ```js
 const axisX = d3.axisBottom(scaleX)(
   svg.append("g").attr("transform", `translate(0, ${plotHeight})`)
-)
+);
 
-axisX // undefined
+axisX; // undefined
 ```
 
 The difference being that `call()` will always return the selection that invoked it; thus keeping the method chain intact.
@@ -163,7 +164,7 @@ Since `axisX` is a D3 selection, chaining-up a call to `selectAll("text")` will 
 axisX
   .selectAll("text")
   .attr("transform", "translate(-10,0)rotate(-45)")
-  .style("text-anchor", "end")
+  .style("text-anchor", "end");
 ```
 
 ![Rotated axis labels](./rotated.svg)
@@ -171,7 +172,10 @@ axisX
 We'll also want to position the axis to it's proper place, along the bottom edge of the plot area.
 
 ```js
-axisX.attr("transform", `translate(${margin.left}, ${plotHeight + margin.top})`)
+axisX.attr(
+  "transform",
+  `translate(${margin.left}, ${plotHeight + margin.top})`
+);
 ```
 
 ![Position the axis](./positioned.svg)
@@ -189,7 +193,7 @@ svg
   .attr("text-anchor", "middle")
   .text("Brewdog's Most Bitter Beers")
   .style("font-size", "18px")
-  .style("font-weight", "bold")
+  .style("font-weight", "bold");
 ```
 
 Setting `attr("y", (margin.top / 3) * 2)` will position the text about two-thirds of the way between the top edge of the chart and the top edge of the plot area.
@@ -206,7 +210,7 @@ svg
   .attr("y", margin.top + plotHeight + 25)
   .text("IBU")
   .style("font-size", "14px")
-  .style("font-weight", "bold")
+  .style("font-weight", "bold");
 ```
 
 ![Adding an X axis label](./label.svg)
@@ -238,8 +242,8 @@ In the code below, we're creating a scale for the Y axis using the names of the 
 const scaleY = d3
   .scaleBand()
   .range([0, plotHeight])
-  .domain(ibu.map(x => x.name))
-  .padding(0.1) // Adds space between the bars
+  .domain(ibu.map((x) => x.name))
+  .padding(0.1); // Adds space between the bars
 ```
 
 Earlier in this post we used `d3.axisBottom()` to generate the X axis.
@@ -272,7 +276,7 @@ const axisY = svg
   .style("font-size", "12px")
   .style("font-weight", "light")
   .style("fill", "#000")
-  .style("stroke", "none")
+  .style("stroke", "none");
 ```
 
 ![Y axis](./y_axis.svg)
@@ -284,15 +288,15 @@ We're almost ready to plot our data, but before we do that, we'll need to remove
 `documentOutline` is a D3 `Selection` object, and we can use this variable later-on to select and remove the element when that time comes.
 
 ```js
-documentOutline // Selection { _groups: [ [ [SVGElement] ] ], _parents: [ null ] }
+documentOutline; // Selection { _groups: [ [ [SVGElement] ] ], _parents: [ null ] }
 ```
 
 Before we can plot the data, we'll need to remove that blue `<rect/>` that we created to indicate where the plot would go.
 We can remove that element, along with the think black border around the chart by selecting them (`documentOutline` and `plotOutline`) and calling `remove()` on each.
 
 ```js
-documentOutline.remove()
-plotOutline.remove()
+documentOutline.remove();
+plotOutline.remove();
 ```
 
 This works because these variables refer to D3 Selection objects.
@@ -304,7 +308,7 @@ While we're at it, let's also remove the Y axis domain line.
 This can be done by selecting the Y axis (`axisY`), and calling an anonymous function that removes whatever `.domain` element happens to be nested inside of `axisY`.
 
 ```js
-axisY.call(g => g.select(".domain").remove())
+axisY.call((g) => g.select(".domain").remove());
 ```
 
 The horizonal bars that we're going to plot each have a black border, so the Y axis domain line _isn't_ necessary, and I think the chart will look better without it.
@@ -324,13 +328,13 @@ const bars = svg
   .attr("transform", `translate(${margin.left}, ${margin.top})`)
   .selectAll("rect")
   .data(ibu)
-  .join("rect")
+  .join("rect");
 ```
 
 The code above will add those elements to the document, but we won't actually see them unless we give them each a `width` and a `height`.
 
 ```js
-bars.attr("width", data => scaleX(data.value))
+bars.attr("width", (data) => scaleX(data.value));
 ```
 
 `selection.attr()` can accept an anonymous function as it's second argument.
@@ -339,7 +343,7 @@ The function's argument (`data`) is an item of the bound data.
 Think of this as a mapping function that will calculate the width of each bar from the data set's values.
 
 ```js
-bars.attr("height", scaleY.bandwidth())
+bars.attr("height", scaleY.bandwidth());
 ```
 
 We're also using another scale method (`bandwidth()`) to calculate the height of each bar.  
@@ -356,7 +360,7 @@ By default, each bar has the x and y positions of `[0, 0]`, which leaves them ap
 We can show this behavior more clearly by styling the bars, shown below:
 
 ```js
-bars.attr("fill", "#00AFDB").style("stroke", "#000")
+bars.attr("fill", "#00AFDB").style("stroke", "#000");
 ```
 
 > "There you are! — D3 Mystery Gang
@@ -370,7 +374,7 @@ Just plug in `data.name`, and that's it!
 It will return a calculated Y position for each bar.
 
 ```js
-bars.attr("y", data => scaleY(data.name))
+bars.attr("y", (data) => scaleY(data.name));
 ```
 
 You can see a log of the calculated Y positions below:
@@ -415,7 +419,7 @@ The black left stroke of each bar now replaces the single Y axis domain line, bu
 We can clear that up by setting the `x` property of the whole bar group to `0.5`.
 
 ```js
-bars.attr("x", 0.5)
+bars.attr("x", 0.5);
 ```
 
 ![Completed chart](./bars.svg)
@@ -431,12 +435,12 @@ svg
   .selectAll("rect")
   .data(ibu)
   .join("rect")
-  .attr("width", data => scaleX(data.value))
+  .attr("width", (data) => scaleX(data.value))
   .attr("height", scaleY.bandwidth())
-  .attr("y", data => scaleY(data.name))
+  .attr("y", (data) => scaleY(data.name))
   .attr("x", 0.5)
   .attr("fill", "#00AFDB")
-  .style("stroke", "#000")
+  .style("stroke", "#000");
 ```
 
 And there we have it.

@@ -107,12 +107,16 @@ meter {
   -webkit-user-drag: element;
 }
 
+:root {
+  --g-space: 20px;
+}
+
 body {
   font-family: Crimson Pro, ui-serif;
   font-size: 1.5rem;
   line-height: 2rem;
   color: hsla(0, 0%, 0%, 0.73);
-  padding: 1.25rem;
+  padding: var(--g-space);
   margin-top: 0.5rem;
   margin-bottom: 0.75rem;
 }
@@ -205,9 +209,9 @@ blockquote {
 
 .call-out-indigo {
   background: #b4e6fc;
-  margin: 0 -2rem;
-  padding: 1rem 2rem;
-  max-width: calc(48rem + 4rem);
+  margin: 0 calc(var(--g-space) * -1);
+  padding: 1rem var(--g-space);
+  max-width: calc(48rem + calc(var(--g-space) * 2));
 }
 
 .call-out-indigo :not(pre) > code[class*="language-"],
@@ -215,9 +219,6 @@ blockquote {
   background: none;
   border: none;
   width: calc(100% + 20px);
-}
-
-.call-out-indigo code[class*="language-"] {
 }
 
 .grid {
@@ -234,4 +235,12 @@ blockquote {
 
 pre[class*="language-"] {
   margin: 0.5rem -1.25rem;
+  width: calc(100% + 2.5rem);
+  overflow: hidden;
+}
+
+iframe {
+  max-width: 48rem;
+  overflow: hidden;
+  width: 100%;
 }
