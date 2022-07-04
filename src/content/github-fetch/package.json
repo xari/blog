@@ -1,0 +1,9 @@
+{
+    "dependencies": {
+        "react": "^18.1.0",
+        "sonar-interview-react-app": "git://github.com/xari/sonar-interview-react-app.git"
+    },
+    "devDependencies": {
+        "react-dom": "^18.1.0"
+    }
+}

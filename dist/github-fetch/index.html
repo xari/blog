@@ -1,0 +1,167 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ideas in Development</title>
+  <link href="../favicon.ico" rel="icon" type="image/x-icon"><link rel="stylesheet" href="../prism.css"><link rel="stylesheet" href="../index.css"><meta name="title" content="My GitHub Repo Fetcher app, and React's useReducer() hook"><meta name="description" content="A React app that fetches Github repositories"><meta property="og:site_name" content="Xari.Dev -Ideas in Development"><meta property="og:title" content="My GitHub Repo Fetcher app, and React's useReducer() hook"><meta property="og:description" content="A React app that fetches Github repositories"><meta property="og:image" content="./screenshot.png"><meta property="og:type" content="website"><meta property="og:updated_time" content="Mon Jul 04 2022 02:00:00 GMT+0200 (Central European Summer Time)"><meta itemprop="name" content="My GitHub Repo Fetcher app, and React's useReducer() hook"><meta itemprop="description" content="A React app that fetches Github repositories"><meta itemprop="image" content="./screenshot.png"></head>
+  <body>
+    <script>
+      // https://stackoverflow.com/questions/21147149/flash-of-unstyled-content-fouc-in-firefox-only-is-ff-slow-renderer
+      0;
+    </script>
+    <header>
+      <a href="../index.html">Ideas in Development</a>
+    </header>
+    <main>
+      <article class="blog-content"><header><time>Mon Jul 04 2022</time><h1>My GitHub Repo Fetcher app, and React's useReducer() hook</h1></header><section>
+<p>I recently built a React app that fetches data from the <a href="https://docs.github.com/en/rest/repos">GitHub Repos API</a>, <a href="https://xari.github.io/github-repo-fetch/">which you can check-out on GitHub pages</a>.
+This was for an interview challenge, and the most interesting part of the challenge to me was how to properly manage application state using only React.
+The code for this project can be found on my GitHub <a href="https://github.com/xari/sonar-interview-react-app">here</a>, and you can see a screenshot of it below.</p>
+<p><img src="./screenshot.png" alt="A screenshot of the app"></p>
+<p>Keep in mind, this UI must let the user do the following:</p>
+<ul>
+<li>Search for GitHub repositories using <em>only</em> a text input.</li>
+<li>Load more repositories (because the repos API paginates the results)</li>
+</ul>
+<p>Additionally, the UI must also provide meaningful feedback to the user.</p>
+<ul>
+<li><em>“Loading…”</em> text when a search has been initiated, as well as when the <em>“Load more”</em> button has been clicked.</li>
+<li><em>“No repositories matched that query.”</em>, when no repositories are found that match the search string.</li>
+</ul>
+<p>Finally, the pagination of the returned repositories must also be reflected.</p>
+<ul>
+<li>ex. <em>“5 of 17325”</em></li>
+<li>ex. <em>“All 8 of 8 matching repositories shown.”</em></li>
+</ul>
+<p>At first glance, I assumed that this required state variables for the following:</p>
+<ul>
+<li>Search/query string (ex. <code>""</code>)</li>
+<li>The fetched repositories (ex. <code>[]</code>)</li>
+<li>The pagination data (ex. <code>1</code>), which is needed to fetch additional repos from the paginated API</li>
+<li>The loading state (ex. <code>true</code>)</li>
+</ul>
+<p>Four state variables may not seem like a whole lot, but in my experience every new state variable exponentially increases the likelihood of conflicting state.
+So, after some struggling-around and a few bugs later, I opted for a simplified approach which relies less on properly navigating React’s component lifecycle, and relies more on simple functional programming -simplified by React’s <code>useReducer()</code> hook.
+The result is two state variables, <code>repos</code> and <code>loading</code>, whose behavior I outline below.</p>
+<p>Here’s how the UI works:</p>
+<ul>
+<li>User types a search string into the text input.
+<ul>
+<li>This triggers a fetch from the Repo API…</li>
+<li>as well as the <em>“Loading…”</em> text,</li>
+<li>and ultimately the repositories are rendered, or if no repositories are returned, the <em>“No repositories matched…”</em> text.</li>
+</ul>
+</li>
+<li>If the user wants to fetch more repositories, they simply click the green <em>“Load more”</em> button, and the above process is repeated.</li>
+</ul>
+<p>If you haven’t yet used the <code>useReducer()</code> React hook, it offers a controlled way of updating state.
+In this case, I’ve created three <em>dispatches</em> that control the way the <code>repo</code> state will be modified: <em>“fill”</em>, <em>“increment”</em>, and <em>“clear”</em>.
+<strong>Because I’m creating the <code>repos</code> state using <code>useReducer()</code> instead-of <code>useState()</code>, these dispatches are the only ways in which the application can modify the <code>repos</code> state.</strong></p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">function</span> <span class="token function">reduceRepos</span><span class="token punctuation">(</span><span class="token parameter">state<span class="token punctuation">,</span> <span class="token punctuation">{</span> type<span class="token punctuation">,</span> <span class="token operator">...</span>repos <span class="token punctuation">}</span></span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">switch</span> <span class="token punctuation">(</span>type<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">case</span> <span class="token string">"fill"</span><span class="token operator">:</span> <span class="token comment">// Think: fresh fetch (page 1)</span>
+      <span class="token keyword">return</span> repos<span class="token punctuation">;</span>
+    <span class="token keyword">case</span> <span class="token string">"increment"</span><span class="token operator">:</span> <span class="token comment">// Think: fetch next page of repo data</span>
+      <span class="token keyword">return</span> <span class="token punctuation">{</span>
+        <span class="token operator">...</span>state<span class="token punctuation">,</span>
+        <span class="token literal-property property">items</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token operator">...</span>state<span class="token punctuation">.</span>items<span class="token punctuation">,</span> <span class="token operator">...</span>repos<span class="token punctuation">.</span>items<span class="token punctuation">]</span><span class="token punctuation">,</span>
+        <span class="token literal-property property">page</span><span class="token operator">:</span> state<span class="token punctuation">.</span>page <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">,</span>
+      <span class="token punctuation">}</span><span class="token punctuation">;</span>
+    <span class="token keyword">case</span> <span class="token string">"clear"</span><span class="token operator">:</span> <span class="token comment">// Clear the search field</span>
+      <span class="token keyword">return</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+    <span class="token keyword">default</span><span class="token operator">:</span>
+      <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">Error</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>A state reducer has access to the current <code>state</code>, as well as to whatever value is dispatched to the reducer.
+In this case, I dispatch the <code>type</code> of the dispatch (<code>"fill"</code>, <code>"increment"</code>, <code>"clear"</code>), as well as the next page of fetched repositories.
+For example, on an initial fetch of the repositories, I dispatch a “fill”, and provide the dispatch with the newly-fetched repository data.</p>
+<pre class="language-js"><code class="language-js"><span class="token function">fetchRepos</span><span class="token punctuation">(</span>searchQuery<span class="token punctuation">)</span> <span class="token comment">// Ex. "D3"</span>
+  <span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter">repos</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token function">dispatchRepos</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token literal-property property">type</span><span class="token operator">:</span> <span class="token string">"fill"</span><span class="token punctuation">,</span> <span class="token operator">...</span>repos <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token function">setLoading</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p><code>fetchRepos()</code> is a function that I created to fetch the data from the Repos API.
+It accounts for the paginated API, and it shapes the response into the structure that I use for rendering the repositories in my UI.</p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">function</span> <span class="token function">fetchRepos</span><span class="token punctuation">(</span><span class="token parameter">q<span class="token punctuation">,</span> page <span class="token operator">=</span> <span class="token number">1</span></span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">return</span> <span class="token function">fetch</span><span class="token punctuation">(</span>
+    <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">https://api.github.com/search/repositories?q=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>q<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">&amp;per_page=5&amp;page=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>page<span class="token interpolation-punctuation punctuation">}</span></span><span class="token template-punctuation string">`</span></span>
+  <span class="token punctuation">)</span>
+    <span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter">response</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> response<span class="token punctuation">.</span><span class="token function">json</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter">newRepos</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+      <span class="token keyword">const</span> repoItems <span class="token operator">=</span> newRepos<span class="token punctuation">.</span>items<span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter">item</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token punctuation">{</span>
+          <span class="token literal-property property">id</span><span class="token operator">:</span> item<span class="token punctuation">.</span>id<span class="token punctuation">,</span>
+          <span class="token literal-property property">full_name</span><span class="token operator">:</span> item<span class="token punctuation">.</span>full_name<span class="token punctuation">,</span>
+          <span class="token literal-property property">avatar_url</span><span class="token operator">:</span> item<span class="token punctuation">.</span>owner<span class="token punctuation">.</span>avatar_url<span class="token punctuation">,</span>
+          <span class="token literal-property property">owner</span><span class="token operator">:</span> item<span class="token punctuation">.</span>owner<span class="token punctuation">.</span>login<span class="token punctuation">,</span>
+          <span class="token literal-property property">html_url</span><span class="token operator">:</span> item<span class="token punctuation">.</span>html_url<span class="token punctuation">,</span>
+          <span class="token literal-property property">description</span><span class="token operator">:</span> item<span class="token punctuation">.</span>description <span class="token operator">&amp;&amp;</span> <span class="token function">truncate</span><span class="token punctuation">(</span>item<span class="token punctuation">.</span>description<span class="token punctuation">)</span><span class="token punctuation">,</span>
+          <span class="token literal-property property">stargazers_count</span><span class="token operator">:</span> item<span class="token punctuation">.</span>stargazers_count<span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token keyword">return</span> <span class="token punctuation">{</span>
+        q<span class="token punctuation">,</span> <span class="token comment">// Search string</span>
+        <span class="token literal-property property">total_count</span><span class="token operator">:</span> newRepos<span class="token punctuation">.</span>total_count<span class="token punctuation">,</span>
+        <span class="token literal-property property">items</span><span class="token operator">:</span> repoItems<span class="token punctuation">,</span>
+        page<span class="token punctuation">,</span>
+      <span class="token punctuation">}</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>Notice that <code>fetchRepos()</code> returns an object that contains all of the info that I originally thought I needed separate state values for.</p>
+<ul>
+<li>The search string itself.</li>
+<li>The number of all repositories that match the search string</li>
+<li>The repositories (<code>items</code>),</li>
+<li>and finally the <code>page</code> number, which keeps track of the pagination.</li>
+</ul>
+<h2>Tying it all together</h2>
+<p>There’s more to the app than what I’ve covered in this post, but when it comes to state, this the code below covers everything:</p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">function</span> <span class="token function">App</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">const</span> <span class="token punctuation">[</span>loading<span class="token punctuation">,</span> setLoading<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">useState</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">const</span> <span class="token punctuation">[</span>repos<span class="token punctuation">,</span> dispatchRepos<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">useReducer</span><span class="token punctuation">(</span>reduceRepos<span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">const</span> <span class="token function-variable function">handleChange</span> <span class="token operator">=</span> <span class="token keyword">async</span> <span class="token punctuation">(</span><span class="token parameter">e</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> searchQuery <span class="token operator">=</span> e<span class="token punctuation">.</span>target<span class="token punctuation">.</span>value<span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>searchQuery <span class="token operator">===</span> <span class="token string">""</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token function">dispatchRepos</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token literal-property property">type</span><span class="token operator">:</span> <span class="token string">"clear"</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// User has cleared the input field</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      <span class="token function">setLoading</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token function">fetchRepos</span><span class="token punctuation">(</span>searchQuery<span class="token punctuation">)</span>
+        <span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter">repos</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token function">dispatchRepos</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token literal-property property">type</span><span class="token operator">:</span> <span class="token string">"fill"</span><span class="token punctuation">,</span> <span class="token operator">...</span>repos <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token function">setLoading</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">const</span> <span class="token function-variable function">handleClick</span> <span class="token operator">=</span> <span class="token keyword">async</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token punctuation">{</span> q<span class="token punctuation">,</span> page <span class="token punctuation">}</span> <span class="token operator">=</span> repos<span class="token punctuation">;</span>
+
+    <span class="token function">setLoading</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token function">fetchRepos</span><span class="token punctuation">(</span>q<span class="token punctuation">,</span> page <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span>
+      <span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter"><span class="token punctuation">{</span> items <span class="token punctuation">}</span></span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        <span class="token function">dispatchRepos</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token literal-property property">type</span><span class="token operator">:</span> <span class="token string">"increment"</span><span class="token punctuation">,</span> items <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span><span class="token punctuation">)</span>
+      <span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token function">setLoading</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">return</span> <span class="token punctuation">(</span>
+    <span class="token operator">&lt;</span><span class="token operator">&gt;</span>
+      <span class="token operator">&lt;</span>input onChange<span class="token operator">=</span><span class="token punctuation">{</span>handleChange<span class="token punctuation">}</span> placeholder<span class="token operator">=</span><span class="token string">"Search for repos here"</span> <span class="token operator">/</span><span class="token operator">&gt;</span>
+
+      <span class="token operator">&lt;</span>button onClick<span class="token operator">=</span><span class="token punctuation">{</span>handleClick<span class="token punctuation">}</span><span class="token operator">&gt;</span>
+        <span class="token punctuation">{</span>loading <span class="token operator">?</span> <span class="token string">"Loading..."</span> <span class="token operator">:</span> <span class="token string">"Load more"</span><span class="token punctuation">}</span>
+      <span class="token operator">&lt;</span><span class="token operator">/</span>button<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span><span class="token operator">/</span><span class="token operator">&gt;</span>
+  <span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</section></article>
+    </main>
+  
+
+</body></html>

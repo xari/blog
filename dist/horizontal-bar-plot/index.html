@@ -1,0 +1,340 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ideas in Development</title>
+  <link href="../favicon.ico" rel="icon" type="image/x-icon"><link rel="stylesheet" href="../prism.css"><link rel="stylesheet" href="../index.css"><meta name="title" content="Horizontal Bar Plot With D3"><meta name="description" content="A step-by step guide to plotting a custom D3 bar chart."><meta property="og:site_name" content="Xari.Dev -Ideas in Development"><meta property="og:title" content="Horizontal Bar Plot With D3"><meta property="og:description" content="A step-by step guide to plotting a custom D3 bar chart."><meta property="og:image" content="./time_lapse.gif"><meta property="og:type" content="website"><meta property="og:updated_time" content="Fri Jan 21 2022 01:00:00 GMT+0100 (Central European Standard Time)"><meta itemprop="name" content="Horizontal Bar Plot With D3"><meta itemprop="description" content="A step-by step guide to plotting a custom D3 bar chart."><meta itemprop="image" content="./time_lapse.gif"></head>
+  <body>
+    <script>
+      // https://stackoverflow.com/questions/21147149/flash-of-unstyled-content-fouc-in-firefox-only-is-ff-slow-renderer
+      0;
+    </script>
+    <header>
+      <a href="../index.html">Ideas in Development</a>
+    </header>
+    <main>
+      <article class="blog-content"><header><time>Fri Jan 21 2022</time><h1>Horizontal Bar Plot With D3</h1></header><section><div class="call-out-indigo">
+<p>This post is part of a series on data wrangling and visualisation with JavaScript.
+It explores data from the <a href="../data-wrangling-with-js">Punk API</a>, and uses it to plot asthetically pleasing charts with D3.js.
+You can find a list of the other posts in this series <a href="../data-wrangling-with-js">here</a></p>
+</div>
+<p>For this part of the series, we’re going to make a horizontal bar plot using D3.js.
+I’ve broken the steps into an easy-to follow sequence, so if you’re new to D3, this is a great place to get oriented with how to use it.
+The plot below is what we’ll be creating in this post.</p>
+<p><img src="./bars.svg" alt="Completed chart"></p>
+<p>IBU stands for International Bitterness Units.
+It’s a metric that represents the bitterness of a drink.
+The higher the IBU, the more bitter the beer.</p>
+<p>We’ll be going through this process in a step-by-step manner, which you can see a preview of below.</p>
+<p><img src="./time_lapse.gif" alt="Time lapse"></p>
+<h2>The data</h2>
+<p>We’re working with an array that represents 30 beers, shown below.</p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">[</span>
+  <span class="token punctuation">{</span> <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Tactical Nuclear Penguin"</span><span class="token punctuation">,</span> <span class="token property">"ibu"</span><span class="token operator">:</span> <span class="token number">1157</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token punctuation">{</span> <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Sink The Bismarck!"</span><span class="token punctuation">,</span> <span class="token property">"ibu"</span><span class="token operator">:</span> <span class="token number">1085</span> <span class="token punctuation">}</span>
+  <span class="token comment">// ... 28 more items</span>
+<span class="token punctuation">]</span>
+</code></pre>
+<p>This array contains everything that we need to plot the horizontal bar chart.
+Each object has two properties: <code>name</code> and <code>ibu</code>.
+If you’d like to see how this array came to be, I encourage you to look back on the earlier posts about <a href="../binding-data-d3">binding data</a> and <a href="../d3-scales">D3 scales</a>.</p>
+<h2>Boilerplate</h2>
+<p>Let’s set-up our SVG and append it to the document that we’re working with.
+If you need help with the code below, check-out the <a href="../data-wrangling-with-js">introduction to this series</a>.</p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">const</span> width <span class="token operator">=</span> <span class="token number">680</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> height <span class="token operator">=</span> <span class="token number">480</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> svg <span class="token operator">=</span> body
+  <span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string">"svg"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"xmlns"</span><span class="token punctuation">,</span> <span class="token string">"http://www.w3.org/2000/svg"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"width"</span><span class="token punctuation">,</span> width<span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"height"</span><span class="token punctuation">,</span> height<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>Now that our SVG element is appended to the document’s body, let’s add a full-height-and-width white background and black border to it.
+This is purely to help us get oriented with where the different elements of our plot will go, and we’ll remove it once we’ve put our axes in place.
+Keep the variable name <code>documentOutline</code> in mind, as we’ll need to reference that name when we’re ready to remove the outline.</p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">const</span> documentOutline <span class="token operator">=</span> svg
+  <span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string">"rect"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"height"</span><span class="token punctuation">,</span> height<span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"width"</span><span class="token punctuation">,</span> width<span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"x"</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"y"</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">style</span><span class="token punctuation">(</span><span class="token string">"stroke"</span><span class="token punctuation">,</span> <span class="token string">"#000"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">style</span><span class="token punctuation">(</span><span class="token string">"fill"</span><span class="token punctuation">,</span> <span class="token string">"none"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p><img src="./outline.svg" alt="Outline"></p>
+<p>Let’s also create another temporary outline that indicates where the horizontal bars will eventually go.</p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">const</span> margin <span class="token operator">=</span> <span class="token punctuation">{</span> <span class="token literal-property property">top</span><span class="token operator">:</span> <span class="token number">80</span><span class="token punctuation">,</span> <span class="token literal-property property">right</span><span class="token operator">:</span> <span class="token number">50</span><span class="token punctuation">,</span> <span class="token literal-property property">bottom</span><span class="token operator">:</span> <span class="token number">60</span><span class="token punctuation">,</span> <span class="token literal-property property">left</span><span class="token operator">:</span> <span class="token number">200</span> <span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> plotHeight <span class="token operator">=</span> height <span class="token operator">-</span> margin<span class="token punctuation">.</span>top <span class="token operator">-</span> margin<span class="token punctuation">.</span>bottom<span class="token punctuation">;</span>
+<span class="token keyword">const</span> plotWidth <span class="token operator">=</span> width <span class="token operator">-</span> margin<span class="token punctuation">.</span>left <span class="token operator">-</span> margin<span class="token punctuation">.</span>right<span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> plotOutline <span class="token operator">=</span> svg
+  <span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string">"rect"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"x"</span><span class="token punctuation">,</span> margin<span class="token punctuation">.</span>left<span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"y"</span><span class="token punctuation">,</span> margin<span class="token punctuation">.</span>top<span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"height"</span><span class="token punctuation">,</span> plotHeight<span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"width"</span><span class="token punctuation">,</span> plotWidth<span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">style</span><span class="token punctuation">(</span><span class="token string">"fill"</span><span class="token punctuation">,</span> <span class="token string">"#00AFDB"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>Creating variables for <code>plotHeight</code> and <code>plotWidth</code> will help us when it comes time to create and position other elements of the chart like axis labels, and even the horizontal bars themselves.</p>
+<p><img src="./plot-outline.svg" alt="Plot outline"></p>
+<h2>Using a scale to plot the X axis</h2>
+<p>In another post, we used D3 scales to <a href="../d3-scales">calculate the width and height of plot elements from data</a>.
+We’re going to apply that same technique here to create our plot axes.</p>
+<p>Remember that data set of 30 beer objects that we’re working with.
+It’s ordered by <em>descending</em> <code>value</code>.<br>
+Here’s a look at that first array item once again:</p>
+<pre class="language-js"><code class="language-js">ibu<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token comment">// { "name": "Tactical Nuclear Penguin", "ibu": 1157 }</span>
+</code></pre>
+<p>We create a scale in D3 by calling a scale function —in this case <code>scaleLinear()</code> —and providing it with a domain and a range.
+In this case, the domain is derived from the values <code>0</code> and <code>1157</code>, because we want the axis to begin at 0 and go all the way to the largest value in the data set, <code>1157</code>.
+The range goes from <code>0</code> to <code>430</code>, because we want the axis line to begin at 0 and go the full length of <code>plotWidth</code>.</p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">const</span> scaleX <span class="token operator">=</span> d3
+  <span class="token punctuation">.</span><span class="token function">scaleLinear</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">domain</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">,</span> ibu<span class="token punctuation">.</span><span class="token function">at</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">.</span>value<span class="token punctuation">]</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">range</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">,</span> plotWidth<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>We can generate everything we need for the X axis by calling <code>d3.axisBottom(scaleX)</code>.
+This function will take care of positioning all axis ticks and labels properly.
+If you’ve read the <a href="../binding-data-d3">post on binding data to DOM elements</a> you’ll appreciate how much <code>axisBottom()</code> and <code>axisLeft()</code> simplify the axis generation process.</p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">const</span> axisX <span class="token operator">=</span> svg
+  <span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string">"g"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"transform"</span><span class="token punctuation">,</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">translate(0, </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>plotHeight<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">)</span><span class="token template-punctuation string">`</span></span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">call</span><span class="token punctuation">(</span>d3<span class="token punctuation">.</span><span class="token function">axisBottom</span><span class="token punctuation">(</span>scaleX<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+axisX<span class="token punctuation">;</span> <span class="token comment">// Selection { _groups: [ [ [SVGSVGElement] ] ], _parents: [ null ] }</span>
+</code></pre>
+<p><img src="./x_axis.svg" alt="X axis"></p>
+<div class="call-out-indigo">
+<h2>A note about <code>call()</code></h2>
+<p>The <code>call()</code> method will invoke the axis function and append the axis to the SVG.
+In the block above we “call” <code>d3.axisBottom(scaleX)</code> from the <code>svg.append("g")</code> method chain.
+The code below will do <em>almost</em> the same thing, but with one major difference:</p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">const</span> axisX <span class="token operator">=</span> d3<span class="token punctuation">.</span><span class="token function">axisBottom</span><span class="token punctuation">(</span>scaleX<span class="token punctuation">)</span><span class="token punctuation">(</span>
+  svg<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string">"g"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"transform"</span><span class="token punctuation">,</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">translate(0, </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>plotHeight<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">)</span><span class="token template-punctuation string">`</span></span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+axisX<span class="token punctuation">;</span> <span class="token comment">// undefined</span>
+</code></pre>
+<p>The difference being that <code>call()</code> will always return the selection that invoked it; thus keeping the method chain intact.
+If we never intend to reference <code>axisX</code> in our code, then we’re free to use the syntax that doesn’t return the selection.
+But if we do want to reference <code>axisX</code> later in our code, then we’ll need to initialize it using the <code>call()</code> method.</p>
+</div>
+<p>This is just a personal preference, but I find that rotating the X axis tick labels by 45 degrees adds a flare of elegance and increases the readablility of the chart.
+Since <code>axisX</code> is a D3 selection, chaining-up a call to <code>selectAll("text")</code> will select the <code>&lt;text/&gt;</code> elements that are contained within the axis.</p>
+<pre class="language-js"><code class="language-js">axisX
+  <span class="token punctuation">.</span><span class="token function">selectAll</span><span class="token punctuation">(</span><span class="token string">"text"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"transform"</span><span class="token punctuation">,</span> <span class="token string">"translate(-10,0)rotate(-45)"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">style</span><span class="token punctuation">(</span><span class="token string">"text-anchor"</span><span class="token punctuation">,</span> <span class="token string">"end"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p><img src="./rotated.svg" alt="Rotated axis labels"></p>
+<p>We’ll also want to position the axis to it’s proper place, along the bottom edge of the plot area.</p>
+<pre class="language-js"><code class="language-js">axisX<span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span>
+  <span class="token string">"transform"</span><span class="token punctuation">,</span>
+  <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">translate(</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>margin<span class="token punctuation">.</span>left<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">, </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>plotHeight <span class="token operator">+</span> margin<span class="token punctuation">.</span>top<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">)</span><span class="token template-punctuation string">`</span></span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p><img src="./positioned.svg" alt="Position the axis"></p>
+<h2>Adding text</h2>
+<p>No chart is complete without it’s title, and that’s exactly what we’ll add to our chart now.
+Simply append a new <code>&lt;text/&gt;</code> element to the chart, position and style it properly, and set it’s inner-text to something descriptive.</p>
+<pre class="language-js"><code class="language-js">svg
+  <span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string">"text"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"x"</span><span class="token punctuation">,</span> width <span class="token operator">/</span> <span class="token number">2</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"y"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>margin<span class="token punctuation">.</span>top <span class="token operator">/</span> <span class="token number">3</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">2</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"text-anchor"</span><span class="token punctuation">,</span> <span class="token string">"middle"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token string">"Brewdog's Most Bitter Beers"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">style</span><span class="token punctuation">(</span><span class="token string">"font-size"</span><span class="token punctuation">,</span> <span class="token string">"18px"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">style</span><span class="token punctuation">(</span><span class="token string">"font-weight"</span><span class="token punctuation">,</span> <span class="token string">"bold"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>Setting <code>attr("y", (margin.top / 3) * 2)</code> will position the text about two-thirds of the way between the top edge of the chart and the top edge of the plot area.</p>
+<p><img src="./title.svg" alt="Adding a title"></p>
+<p>Next, we’ll add an X axis label that can tell anyone viewing the chart what those numbers below the axis represent.</p>
+<pre class="language-js"><code class="language-js">svg
+  <span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string">"text"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"text-anchor"</span><span class="token punctuation">,</span> <span class="token string">"end"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"x"</span><span class="token punctuation">,</span> margin<span class="token punctuation">.</span>left <span class="token operator">+</span> plotWidth <span class="token operator">+</span> <span class="token number">25</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"y"</span><span class="token punctuation">,</span> margin<span class="token punctuation">.</span>top <span class="token operator">+</span> plotHeight <span class="token operator">+</span> <span class="token number">25</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token string">"IBU"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">style</span><span class="token punctuation">(</span><span class="token string">"font-size"</span><span class="token punctuation">,</span> <span class="token string">"14px"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">style</span><span class="token punctuation">(</span><span class="token string">"font-weight"</span><span class="token punctuation">,</span> <span class="token string">"bold"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p><img src="./label.svg" alt="Adding an X axis label"></p>
+<h2>Using a scale to plot the Y axis</h2>
+<p><code>axisBottom()</code> returns a number of methods that can be used to customize the axis.
+These are shown below, and later-on we’ll use the <code>tickSize</code> method to remove the ticks from the Y axis.</p>
+<pre class="language-js"><code class="language-js"><span class="token punctuation">[</span>Function<span class="token operator">:</span> axis<span class="token punctuation">]</span> <span class="token punctuation">{</span>
+  <span class="token literal-property property">scale</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">ticks</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">tickArguments</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">tickValues</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">tickFormat</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">tickSize</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">tickSizeInner</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">tickSizeOuter</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">tickPadding</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">offset</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>We’re now going to use a scale to do the work that was done manually in the previous post on <a href="../d3-scales">binding data to text elements</a>.
+In the code below, we’re creating a scale for the Y axis using the names of the beers, and then setting it’s <code>range</code> to the plot height.</p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">const</span> scaleY <span class="token operator">=</span> d3
+  <span class="token punctuation">.</span><span class="token function">scaleBand</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">range</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">,</span> plotHeight<span class="token punctuation">]</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">domain</span><span class="token punctuation">(</span>ibu<span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter">x</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> x<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">padding</span><span class="token punctuation">(</span><span class="token number">0.1</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// Adds space between the bars</span>
+</code></pre>
+<p>Earlier in this post we used <code>d3.axisBottom()</code> to generate the X axis.
+We’ll now use a similar function, <code>axisLeft()</code>, to generate the Y axis.</p>
+<p>Remember; these functions gives us several methods that we can chain to customize the axis.</p>
+<pre class="language-js"><code class="language-js"><span class="token punctuation">[</span>Function<span class="token operator">:</span> axis<span class="token punctuation">]</span> <span class="token punctuation">{</span>
+  <span class="token literal-property property">scale</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">ticks</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">tickArguments</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">tickValues</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">tickFormat</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">tickSize</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">tickSizeInner</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">tickSizeOuter</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">tickPadding</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">offset</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">Function</span> <span class="token punctuation">(</span>anonymous<span class="token punctuation">)</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>The <code>tickSize()</code> method will let us customize the size of the axis ticks, and setting them to <code>0</code> will remove them from the axis.</p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">const</span> axisY <span class="token operator">=</span> svg
+  <span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string">"g"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">call</span><span class="token punctuation">(</span>d3<span class="token punctuation">.</span><span class="token function">axisLeft</span><span class="token punctuation">(</span>scaleY<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">tickSize</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"transform"</span><span class="token punctuation">,</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">translate(</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>margin<span class="token punctuation">.</span>left<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">, </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>margin<span class="token punctuation">.</span>top<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">)</span><span class="token template-punctuation string">`</span></span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">style</span><span class="token punctuation">(</span><span class="token string">"font-size"</span><span class="token punctuation">,</span> <span class="token string">"12px"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">style</span><span class="token punctuation">(</span><span class="token string">"font-weight"</span><span class="token punctuation">,</span> <span class="token string">"light"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">style</span><span class="token punctuation">(</span><span class="token string">"fill"</span><span class="token punctuation">,</span> <span class="token string">"#000"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">style</span><span class="token punctuation">(</span><span class="token string">"stroke"</span><span class="token punctuation">,</span> <span class="token string">"none"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p><img src="./y_axis.svg" alt="Y axis"></p>
+<p>We’re almost ready to plot our data, but before we do that, we’ll need to remove the blue plot outline placeholder from our chart.</p>
+<h2>Removing selections from a chart</h2>
+<p><code>documentOutline</code> is a D3 <code>Selection</code> object, and we can use this variable later-on to select and remove the element when that time comes.</p>
+<pre class="language-js"><code class="language-js">documentOutline<span class="token punctuation">;</span> <span class="token comment">// Selection { _groups: [ [ [SVGElement] ] ], _parents: [ null ] }</span>
+</code></pre>
+<p>Before we can plot the data, we’ll need to remove that blue <code>&lt;rect/&gt;</code> that we created to indicate where the plot would go.
+We can remove that element, along with the think black border around the chart by selecting them (<code>documentOutline</code> and <code>plotOutline</code>) and calling <code>remove()</code> on each.</p>
+<pre class="language-js"><code class="language-js">documentOutline<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+plotOutline<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>This works because these variables refer to D3 Selection objects.
+Selection objects refert to DOM elements, and whenever we create a new DOM element in D3, the function that we use to create it (i.e. <code>svg.append("rect")</code>) will return a Selection object that is bound to the element that we just created.</p>
+<p><img src="./axes.svg" alt="Chart without data"></p>
+<p>While we’re at it, let’s also remove the Y axis domain line.
+This can be done by selecting the Y axis (<code>axisY</code>), and calling an anonymous function that removes whatever <code>.domain</code> element happens to be nested inside of <code>axisY</code>.</p>
+<pre class="language-js"><code class="language-js"><span class="token function">axisY</span><span class="token punctuation">.</span><span class="token function">call</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter">g</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> g<span class="token punctuation">.</span><span class="token function">select</span><span class="token punctuation">(</span><span class="token string">".domain"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>The horizonal bars that we’re going to plot each have a black border, so the Y axis domain line <em>isn’t</em> necessary, and I think the chart will look better without it.</p>
+<p><img src="./remove_domain.svg" alt="Removing the Y axis domain line"></p>
+<h2>Plotting the data</h2>
+<p>This next step was covered in-depth in <a href="../d3-scales">the post that introduced D3 scales</a>.
+But to briefly review what’s happening below, we’re using the X and Y axis scales to set the width and height of each horizontal bar.</p>
+<p>The code below creates and positions a new <code>&lt;group/&gt;</code> element that contains the bars, but without specifying the <code>width</code> and <code>height</code> attribute of each bar, we won’t actually see the bars yet.</p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">const</span> bars <span class="token operator">=</span> svg
+  <span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string">"g"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"transform"</span><span class="token punctuation">,</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">translate(</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>margin<span class="token punctuation">.</span>left<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">, </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>margin<span class="token punctuation">.</span>top<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">)</span><span class="token template-punctuation string">`</span></span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">selectAll</span><span class="token punctuation">(</span><span class="token string">"rect"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">data</span><span class="token punctuation">(</span>ibu<span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">join</span><span class="token punctuation">(</span><span class="token string">"rect"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>The code above will add those elements to the document, but we won’t actually see them unless we give them each a <code>width</code> and a <code>height</code>.</p>
+<pre class="language-js"><code class="language-js">bars<span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"width"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token parameter">data</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token function">scaleX</span><span class="token punctuation">(</span>data<span class="token punctuation">.</span>value<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p><code>selection.attr()</code> can accept an anonymous function as it’s second argument.
+This function will be run once for each item in the bound data set (<code>ibu</code>, in this case).
+The function’s argument (<code>data</code>) is an item of the bound data.<br>
+Think of this as a mapping function that will calculate the width of each bar from the data set’s values.</p>
+<pre class="language-js"><code class="language-js">bars<span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"height"</span><span class="token punctuation">,</span> scaleY<span class="token punctuation">.</span><span class="token function">bandwidth</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>We’re also using another scale method (<code>bandwidth()</code>) to calculate the height of each bar.<br>
+<code>scaleY.bandwidth()</code> returns the number <code>17.910447761194032</code>, which is the <code>plotHeight</code> divided by the number of items in the dataset —but also accounting for the <code>0.1</code> of padding that we specified when we created the Y axis scale!
+Imagine having to account for that level of detail without the help of D3.</p>
+<p><img src="./un_positioned.svg" alt="Un-positioned bars"></p>
+<p>Specifying the width and height of the rectangles will make them visible to us, but we quickly see that isn’t all it’s going to take.</p>
+<h2>Positioning the bars</h2>
+<p>By default, each bar has the x and y positions of <code>[0, 0]</code>, which leaves them appearing on-top of each other.
+We can show this behavior more clearly by styling the bars, shown below:</p>
+<pre class="language-js"><code class="language-js">bars<span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"fill"</span><span class="token punctuation">,</span> <span class="token string">"#00AFDB"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">style</span><span class="token punctuation">(</span><span class="token string">"stroke"</span><span class="token punctuation">,</span> <span class="token string">"#000"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<blockquote>
+<p>"There you are! — D3 Mystery Gang</p>
+</blockquote>
+<p><img src="./styled.svg" alt="Styled"></p>
+<blockquote>
+<p>“And we would’ve gotten away with it too, if it weren’t for you meddling D3 kids!” — Bars</p>
+</blockquote>
+<p>Positioning those bars is a breeze, thanks to <code>scaleY()</code>.
+Just plug in <code>data.name</code>, and that’s it!
+It will return a calculated Y position for each bar.</p>
+<pre class="language-js"><code class="language-js">bars<span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"y"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token parameter">data</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token function">scaleY</span><span class="token punctuation">(</span>data<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>You can see a log of the calculated Y positions below:</p>
+<pre><code>1.990049751243788
+21.8905472636816
+41.79104477611941
+61.69154228855723
+81.59203980099504
+101.49253731343285
+121.39303482587067
+141.29353233830847
+161.1940298507463
+181.0945273631841
+200.9950248756219
+220.89552238805973
+240.79601990049755
+260.69651741293535
+280.5970149253732
+300.497512437811
+320.3980099502488
+340.29850746268664
+360.19900497512447
+380.0995024875622
+</code></pre>
+<p><img src="./positioned-y.svg" alt="Positioned Y"></p>
+<h2>Offsetting the <code>x</code> domain</h2>
+<p>We’re <em>almost</em> done…
+There’s just one pesky little detail to take care of.
+You may have not even noticed it, so let’s take a closer look.</p>
+<p><img src="./zoom.gif" alt="Zoom"></p>
+<p>The circle above outlines the domain origins of the X and Y axis.
+We removed the Y axis domain line earlier in this post to create a stylized look for the chart.
+The black left stroke of each bar now replaces the single Y axis domain line, but as we can see in the outline above, the bars are mis-aligned by half a pixel.</p>
+<p>We can clear that up by setting the <code>x</code> property of the whole bar group to <code>0.5</code>.</p>
+<pre class="language-js"><code class="language-js">bars<span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"x"</span><span class="token punctuation">,</span> <span class="token number">0.5</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p><img src="./bars.svg" alt="Completed chart"></p>
+<blockquote>
+<p>“Much better.”</p>
+</blockquote>
+<p>We can see the entire code for the horizontal bars below.</p>
+<pre class="language-js"><code class="language-js">svg
+  <span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string">"g"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"transform"</span><span class="token punctuation">,</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">translate(</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>margin<span class="token punctuation">.</span>left<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">, </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>margin<span class="token punctuation">.</span>top<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">)</span><span class="token template-punctuation string">`</span></span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">selectAll</span><span class="token punctuation">(</span><span class="token string">"rect"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">data</span><span class="token punctuation">(</span>ibu<span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">join</span><span class="token punctuation">(</span><span class="token string">"rect"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"width"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token parameter">data</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token function">scaleX</span><span class="token punctuation">(</span>data<span class="token punctuation">.</span>value<span class="token punctuation">)</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"height"</span><span class="token punctuation">,</span> scaleY<span class="token punctuation">.</span><span class="token function">bandwidth</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"y"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token parameter">data</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token function">scaleY</span><span class="token punctuation">(</span>data<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"x"</span><span class="token punctuation">,</span> <span class="token number">0.5</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">attr</span><span class="token punctuation">(</span><span class="token string">"fill"</span><span class="token punctuation">,</span> <span class="token string">"#00AFDB"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">style</span><span class="token punctuation">(</span><span class="token string">"stroke"</span><span class="token punctuation">,</span> <span class="token string">"#000"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>And there we have it.
+A beautiful and informative chart that shows us the IBU of Brewdog’s most bitter beers.</p>
+<p>Did you notice that the most bitter beer, “Tactical Nuclear Penguin”, has an IBU of almost 1200?
+I couldn’t believe it at first, and assumed it must have been an error in the data.
+I looked it up though, and found this hilarious video about how that beer came to be.
+It turns out that the alcohol content of that beer is an alarming 32%! 😅</p>
+<div class="max-w-3xl">
+  <iframe title="vimeo-player" src="https://player.vimeo.com/video/7812379?h=1c9cd7ede5" width="640" height="360" frameborder="0" allowfullscreen=""></iframe>
+</div>
+</section></article>
+    </main>
+  
+
+</body></html>

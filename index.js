@@ -1,4 +1,3 @@
-import express from "express";
 import { promises as fs } from "fs";
 import { fileURLToPath } from "url";
 import path, { dirname } from "path";
@@ -8,42 +7,6 @@ import YAML from "yaml";
 import MarkdownIt from "markdown-it";
 import front_matter_plugin from "markdown-it-front-matter";
 import prism_plugin from "markdown-it-prism";
-import webpack from "webpack";
-
-// This config object is used to compile the JS that may be included in individual blog posts
-const getWebpackConfig = (file, destination) => ({
-  mode: "development",
-  entry: file.path,
-  resolve: {
-    extensions: [".js"],
-  },
-  output: {
-    filename: file.name,
-    path: destination,
-  },
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        use: [
-          {
-            loader: "babel-loader",
-            options: {
-              presets: [
-                "@babel/preset-env",
-                ["@babel/preset-react", { runtime: "automatic" }],
-              ],
-            },
-          },
-        ],
-      },
-      {
-        test: /\.css$/i,
-        use: ["style-loader", "css-loader"],
-      },
-    ],
-  },
-});
 
 function createPreviewContent(dom) {
   return ({ title, description, date, path }) => {
@@ -185,15 +148,14 @@ const __dirname = dirname(__filename);
 const origin = path.join(__dirname, "src");
 const __destination = path.join(__dirname, "dist");
 
-const fileTypes = [".md", ".js", ".png", ".jpg", ".jpeg", ".svg", ".gif"];
+const fileTypes = [".md", ".png", ".jpg", ".jpeg", ".svg", ".gif"];
 
 // Resolves to an object, each of whose properties is an array of files
-const { md, js, img } = await getFileStructure(
+const { md, img } = await getFileStructure(
   fileTypes.reduce((o, key) => ({ ...o, [key]: [] }), {}),
   origin
-).then(({ ".md": md, ".js": js, ...img }) => {
+).then(({ ".md": md, ...img }) => {
   const _md = md.map(getFileContent);
-  const _js = js.map((file) => webpack(getWebpackConfig(file, __destination)));
   const _img = Object.keys(img)
     .reduce((paths, key) => paths.concat(img[key]), [])
     .map(({ path: _path }) => ({
@@ -209,7 +171,6 @@ const { md, js, img } = await getFileStructure(
 
   return {
     md: _md,
-    js: _js,
     img: _img,
   };
 });

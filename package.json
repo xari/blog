@@ -4,21 +4,12 @@
         "prestart": "mkdir -p ./dist & cp ./*.css ./dist",
         "start": "node ./index.js"
     },
-    "dependencies": {
+    "devDependencies": {
         "jsdom": "^19.0.0",
         "markdown-it": "^13.0.1",
         "markdown-it-front-matter": "^0.2.3",
         "markdown-it-prism": "^2.2.4",
         "sharp": "^0.30.4",
         "yaml": "^2.1.0"
-    },
-    "devDependencies": {
-        "@babel/core": "^7.18.2",
-        "@babel/preset-env": "^7.18.2",
-        "@babel/preset-react": "^7.17.12",
-        "babel-loader": "^8.2.5",
-        "css-loader": "^6.7.1",
-        "style-loader": "^3.3.1",
-        "webpack": "^5.73.0"
     }
 }
