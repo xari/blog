@@ -346,6 +346,9 @@ const posts = await Promise.all(md)
 // Create the front-page
 Promise.all(posts)
   .then((x) =>
+    x.sort((a, b) => (a.date > b.date ? -1 : a.date > b.date ? 1 : 0))
+  )
+  .then((x) =>
     JSDOM.fromFile(path.join(__dirname, "index.html"))
       .then((dom) => {
         const head = dom.window.document.querySelector("head");

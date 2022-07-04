@@ -11,6 +11,8 @@ The code for this project can be found on my GitHub [here](https://github.com/xa
 
 ![A screenshot of the app](./screenshot.png)
 
+## Requirements
+
 Keep in mind, this UI must let the user do the following:
 
 - Search for GitHub repositories using _only_ a text input.
@@ -25,6 +27,8 @@ Finally, the pagination of the returned repositories must also be reflected.
 
 - ex. _"5 of 17325"_
 - ex. _"All 8 of 8 matching repositories shown."_
+
+## Application state
 
 At first glance, I assumed that this required state variables for the following:
 
@@ -44,6 +48,8 @@ Here's how the UI works:
   - as well as the _"Loading..."_ text,
   - and ultimately the repositories are rendered, or if no repositories are returned, the _"No repositories matched..."_ text.
 - If the user wants to fetch more repositories, they simply click the green _"Load more"_ button, and the above process is repeated.
+
+## useReducer()
 
 If you haven't yet used the `useReducer()` React hook, it offers a controlled way of updating state.
 In this case, I've created three _dispatches_ that control the way the `repo` state will be modified: _"fill"_, _"increment"_, and _"clear"_.

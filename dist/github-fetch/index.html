@@ -18,6 +18,7 @@
 This was for an interview challenge, and the most interesting part of the challenge to me was how to properly manage application state using only React.
 The code for this project can be found on my GitHub <a href="https://github.com/xari/sonar-interview-react-app">here</a>, and you can see a screenshot of it below.</p>
 <p><img src="./screenshot.png" alt="A screenshot of the app"></p>
+<h2>Requirements</h2>
 <p>Keep in mind, this UI must let the user do the following:</p>
 <ul>
 <li>Search for GitHub repositories using <em>only</em> a text input.</li>
@@ -33,6 +34,7 @@ The code for this project can be found on my GitHub <a href="https://github.com/
 <li>ex. <em>“5 of 17325”</em></li>
 <li>ex. <em>“All 8 of 8 matching repositories shown.”</em></li>
 </ul>
+<h2>Application state</h2>
 <p>At first glance, I assumed that this required state variables for the following:</p>
 <ul>
 <li>Search/query string (ex. <code>""</code>)</li>
@@ -54,6 +56,7 @@ The result is two state variables, <code>repos</code> and <code>loading</code>, 
 </li>
 <li>If the user wants to fetch more repositories, they simply click the green <em>“Load more”</em> button, and the above process is repeated.</li>
 </ul>
+<h2>useReducer()</h2>
 <p>If you haven’t yet used the <code>useReducer()</code> React hook, it offers a controlled way of updating state.
 In this case, I’ve created three <em>dispatches</em> that control the way the <code>repo</code> state will be modified: <em>“fill”</em>, <em>“increment”</em>, and <em>“clear”</em>.
 <strong>Because I’m creating the <code>repos</code> state using <code>useReducer()</code> instead-of <code>useState()</code>, these dispatches are the only ways in which the application can modify the <code>repos</code> state.</strong></p>
