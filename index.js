@@ -159,7 +159,7 @@ const { md, img } = await getFileStructure(
   const _img = Object.keys(img)
     .reduce((paths, key) => paths.concat(img[key]), [])
     .map(({ path: _path }) => ({
-      path: path.relative(path.join(origin, "content"), _path),
+      path: path.relative(origin, _path),
       sharp: sharp(
         _path,
         path.extname(_path) === ".gif" ? { animated: true } : {} // Keeps frames for animated GIFs
@@ -188,10 +188,7 @@ img.forEach(({ path: _path, sharp }) =>
 const posts = await Promise.all(md)
   .then((x) =>
     x.map(({ content: blogPost, path: postPath, ...postData }) => {
-      const relPostPath = path.relative(
-        path.join(__dirname, "src", "content"),
-        postPath
-      );
+      const relPostPath = path.relative(path.join(__dirname, "src"), postPath);
       const destinationPath = path.parse(
         path.join(__destination, relPostPath)
       ).dir;
